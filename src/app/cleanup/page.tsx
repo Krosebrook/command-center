@@ -1,15 +1,32 @@
 import { scanDrive } from "@/lib/scanner";
 import { readFileContent, parseTodoItems } from "@/lib/parser";
-import { KEY_FILES } from "@/lib/config";
+import { KEY_FILES, WALKTHROUGH_LOG_PATH } from "@/lib/config";
 import { formatBytes } from "@/lib/utils";
+import fs from "fs/promises";
+import type { WalkthroughLogEntry } from "@/lib/types";
+
+function parseLogSafely(content: string | null): WalkthroughLogEntry[] {
+  if (!content) return [];
+  try {
+    return JSON.parse(content);
+  } catch {
+    return [];
+  }
+}
 
 export const dynamic = "force-dynamic";
 
 export default async function CleanupPage() {
-  const [stats, todoContent] = await Promise.all([
+  const [stats, todoContent, logContent] = await Promise.all([
     scanDrive(),
     readFileContent(KEY_FILES.todo),
+    fs.readFile(WALKTHROUGH_LOG_PATH, "utf-8").catch(() => null),
   ]);
+
+  const walkthroughLog = parseLogSafely(logContent);
+
+  // Show most recent 10 entries, newest first
+  const recentActions = [...walkthroughLog].reverse().slice(0, 10);
 
   const todos = parseTodoItems(todoContent);
   const pending = todos.filter((t) => !t.done);
@@ -135,23 +152,27 @@ export default async function CleanupPage() {
       {/* Cleanup History */}
       <div className="rounded-xl border border-border bg-card p-5">
         <h2 className="font-semibold mb-3">Recent Cleanup Actions</h2>
-        <div className="space-y-2 text-sm">
-          {[
-            { date: "2026-03-03", action: "Deleted NulFile/ (only nul artifacts)" },
-            { date: "2026-03-03", action: "Archived tmp/claude/ diffs to Backups" },
-            { date: "2026-03-03", action: "Secured stray client_secret to user profile" },
-            { date: "2026-03-03", action: "Removed nul artifacts from 00_Core/, Skills/" },
-            { date: "2026-02-13", action: "Homebase-centric restructure completed" },
-          ].map((entry, i) => (
-            <div key={i} className="flex items-center gap-3">
-              <span className="text-xs text-muted-foreground font-mono">
-                {entry.date}
-              </span>
-              <span className="text-emerald-400">&#10003;</span>
-              <span>{entry.action}</span>
-            </div>
-          ))}
-        </div>
+        {recentActions.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No walkthrough actions recorded yet. Run the Drive Walkthrough to log actions here.
+          </p>
+        ) : (
+          <div className="space-y-2 text-sm">
+            {recentActions.map((entry, i) => (
+              <div key={i} className="flex items-center gap-3">
+                <span className="text-xs text-muted-foreground font-mono">
+                  {entry.timestamp.slice(0, 10)}
+                </span>
+                <span className="text-emerald-400">&#10003;</span>
+                <span className="capitalize">{entry.action}</span>
+                <span className="font-mono text-xs text-muted-foreground truncate">
+                  {entry.source}
+                  {entry.destination ? ` → ${entry.destination}` : ""}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
       </div>
     </div>
   );

@@ -94,6 +94,9 @@ export const SORT_RULES: Record<string, { destination: string; label: string }> 
   ".pdf": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
   ".doc": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
   ".docx": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
+  ".pptx": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
+  ".xlsx": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
+  ".csv": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
   ".txt": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
   ".md": { destination: path.join(FOLDERS.documentation, "Documents"), label: "Documentation" },
   ".agent.md": { destination: path.join(FOLDERS.development, "CopilotAgents"), label: "Agent Definition" },
@@ -101,8 +104,13 @@ export const SORT_RULES: Record<string, { destination: string; label: string }> 
   ".jpg": { destination: path.join(FOLDERS.media, "Images"), label: "Media (Images)" },
   ".jpeg": { destination: path.join(FOLDERS.media, "Images"), label: "Media (Images)" },
   ".gif": { destination: path.join(FOLDERS.media, "Images"), label: "Media (Images)" },
+  ".svg": { destination: path.join(FOLDERS.media, "Images"), label: "Media (Images)" },
+  ".webp": { destination: path.join(FOLDERS.media, "Images"), label: "Media (Images)" },
   ".mp4": { destination: path.join(FOLDERS.media, "Videos"), label: "Media (Videos)" },
   ".mov": { destination: path.join(FOLDERS.media, "Videos"), label: "Media (Videos)" },
+  ".webm": { destination: path.join(FOLDERS.media, "Videos"), label: "Media (Videos)" },
+  ".mp3": { destination: path.join(FOLDERS.media, "Audio"), label: "Media (Audio)" },
+  ".wav": { destination: path.join(FOLDERS.media, "Audio"), label: "Media (Audio)" },
 };
 
 export const GOVERNANCE_FILES = [
@@ -116,3 +124,14 @@ export const GOVERNANCE_FILES = [
 
 export const STALE_DAYS = 30;
 export const LARGE_FILE_THRESHOLD = 50 * 1024 * 1024; // 50MB
+
+/** Path where setup walkthrough actions are logged for undo/history. */
+export const WALKTHROUGH_LOG_PATH = path.join(
+  FOLDERS.homebase,
+  // Nested project structure: 03_Projects/Projects/Active/<app-folder>
+  "03_Projects",
+  "Projects",
+  "Active",
+  "command-center",
+  ".walkthrough-log.json"
+);

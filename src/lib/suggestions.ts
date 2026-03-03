@@ -1,23 +1,10 @@
 import path from "path";
-import type { ScanResult } from "./deep-scanner";
+import type { ScanResult, SuggestionAction, Confidence, Suggestion } from "./types";
 import { SORT_RULES, FOLDERS } from "./config";
+import { formatDate } from "./utils";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type SuggestionAction = "move" | "create-index" | "archive" | "delete";
-export type Confidence = "high" | "medium" | "low";
-
-export interface Suggestion {
-  id: string;
-  title: string;
-  description: string;
-  action: SuggestionAction;
-  source: string;
-  destination?: string;
-  confidence: Confidence;
-}
+// Re-export suggestion types so existing importers continue to work
+export type { SuggestionAction, Confidence, Suggestion } from "./types";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -49,18 +36,6 @@ function getSortedRuleKeys(): string[] {
  */
 function matchesExtension(filename: string, ext: string): boolean {
   return filename.toLowerCase().endsWith(ext.toLowerCase());
-}
-
-/**
- * Format a date string for human-readable descriptions.
- */
-function formatDate(isoString: string): string {
-  const d = new Date(isoString);
-  return d.toLocaleDateString("en-US", {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-  });
 }
 
 /**

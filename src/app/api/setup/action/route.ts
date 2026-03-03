@@ -1,29 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
+import { DRIVE_ROOT, WALKTHROUGH_LOG_PATH } from "@/lib/config";
+import { fileExists, clearCache } from "@/lib/scanner";
+import { clearDeepCache } from "@/lib/deep-scanner";
+import type { WalkthroughLogEntry } from "@/lib/types";
 
-const LOG_PATH = path.join(
-  "D:",
-  "01_Homebase",
-  "03_Projects",
-  "Projects",
-  "Active",
-  "command-center",
-  ".walkthrough-log.json"
-);
+const LOG_PATH = WALKTHROUGH_LOG_PATH;
 
 const VALID_ACTIONS = ["move", "create-index", "archive", "delete"] as const;
 type ActionType = (typeof VALID_ACTIONS)[number];
 
-interface LogEntry {
-  action: string;
-  source: string;
-  destination?: string;
-  timestamp: string;
+/**
+ * Return true only if the resolved path stays within DRIVE_ROOT.
+ * Prevents path-traversal attacks (e.g. "../../../etc/passwd" or "C:\Windows").
+ */
+function isUnderDriveRoot(inputPath: string): boolean {
+  const normalized = path.normalize(inputPath);
+  const root = path.normalize(DRIVE_ROOT);
+  // DRIVE_ROOT ends with a separator (e.g. "D:\"), so prefix check is safe.
+  return normalized === root || normalized.startsWith(root);
 }
 
-async function appendToLog(entry: LogEntry) {
-  let log: LogEntry[] = [];
+async function appendToLog(entry: WalkthroughLogEntry) {
+  let log: WalkthroughLogEntry[] = [];
   try {
     const existing = await fs.readFile(LOG_PATH, "utf-8");
     log = JSON.parse(existing);
@@ -31,16 +31,8 @@ async function appendToLog(entry: LogEntry) {
     // File doesn't exist yet or is invalid — start fresh
   }
   log.push(entry);
+  await fs.mkdir(path.dirname(LOG_PATH), { recursive: true });
   await fs.writeFile(LOG_PATH, JSON.stringify(log, null, 2), "utf-8");
-}
-
-async function sourceExists(source: string): Promise<boolean> {
-  try {
-    await fs.access(source);
-    return true;
-  } catch {
-    return false;
-  }
 }
 
 export async function POST(request: NextRequest) {
@@ -65,7 +57,21 @@ export async function POST(request: NextRequest) {
     );
   }
 
-  if (!(await sourceExists(source))) {
+  // Security: reject paths that escape the drive root
+  if (!isUnderDriveRoot(source)) {
+    return NextResponse.json(
+      { error: "source path is outside the allowed drive root" },
+      { status: 400 }
+    );
+  }
+  if (destination && !isUnderDriveRoot(destination)) {
+    return NextResponse.json(
+      { error: "destination path is outside the allowed drive root" },
+      { status: 400 }
+    );
+  }
+
+  if (!(await fileExists(source))) {
     return NextResponse.json(
       { error: `Source does not exist: ${source}` },
       { status: 404 }
@@ -85,6 +91,8 @@ export async function POST(request: NextRequest) {
         const targetPath = path.join(destination, path.basename(source));
         await fs.rename(source, targetPath);
         await appendToLog({ action, source, destination, timestamp: new Date().toISOString() });
+        clearCache();
+        clearDeepCache();
         return NextResponse.json({
           success: true,
           message: `Moved ${path.basename(source)} to ${destination}`,
@@ -109,6 +117,7 @@ export async function POST(request: NextRequest) {
         const indexPath = path.join(source, "_INDEX.md");
         await fs.writeFile(indexPath, lines.join("\n"), "utf-8");
         await appendToLog({ action, source, timestamp: new Date().toISOString() });
+        clearDeepCache();
         return NextResponse.json({
           success: true,
           message: `Created _INDEX.md in ${folderName} with ${entries.length} entries`,
@@ -116,6 +125,13 @@ export async function POST(request: NextRequest) {
       }
 
       case "archive": {
+        // Validate that the source lives inside an "Active" directory (exact segment match)
+        if (!/[/\\]Active[/\\]/.test(source)) {
+          return NextResponse.json(
+            { error: "archive action requires source to be inside an Active directory" },
+            { status: 400 }
+          );
+        }
         const archiveBase = source.replace(
           /[/\\]Active[/\\]/,
           `${path.sep}Archive${path.sep}`
@@ -132,6 +148,8 @@ export async function POST(request: NextRequest) {
           destination: archivePath,
           timestamp: new Date().toISOString(),
         });
+        clearCache();
+        clearDeepCache();
         return NextResponse.json({
           success: true,
           message: `Archived ${path.basename(source)} to ${archivePath}`,
@@ -141,6 +159,8 @@ export async function POST(request: NextRequest) {
       case "delete": {
         await fs.rm(source, { recursive: true });
         await appendToLog({ action, source, timestamp: new Date().toISOString() });
+        clearCache();
+        clearDeepCache();
         return NextResponse.json({
           success: true,
           message: `Deleted ${source}`,

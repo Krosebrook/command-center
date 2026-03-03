@@ -9,22 +9,21 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "clsx": "^2.1.1",
+    "gray-matter": "^4.0.3",
     "next": "^15.1.0",
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
-    "lucide-react": "^0.468.0",
-    "gray-matter": "^4.0.3",
-    "clsx": "^2.1.1",
     "tailwind-merge": "^2.6.0"
   },
   "devDependencies": {
+    "@tailwindcss/typography": "^0.5.15",
     "@types/node": "^22.10.0",
     "@types/react": "^19.0.0",
     "@types/react-dom": "^19.0.0",
-    "typescript": "^5.7.0",
-    "tailwindcss": "^3.4.17",
-    "postcss": "^8.4.49",
     "autoprefixer": "^10.4.20",
-    "@tailwindcss/typography": "^0.5.15"
+    "postcss": "^8.4.49",
+    "tailwindcss": "^3.4.17",
+    "typescript": "^5.7.0"
   }
 }

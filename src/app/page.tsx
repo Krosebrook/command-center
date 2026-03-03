@@ -1,8 +1,9 @@
 import { scanDrive } from "@/lib/scanner";
-import { PROJECTS } from "@/lib/config";
+import { PROJECTS, FOLDERS } from "@/lib/config";
 import { ProjectCard } from "@/components/ProjectCard";
 import { DriveHealthBar } from "@/components/DriveHealthBar";
 import { formatBytes, timeAgo } from "@/lib/utils";
+import path from "path";
 
 export const dynamic = "force-dynamic";
 
@@ -71,15 +72,15 @@ export default async function DashboardPage() {
         <h2 className="font-semibold mb-3">Quick Navigation</h2>
         <div className="grid grid-cols-3 gap-2">
           {[
-            { label: "Active Projects", path: "D:\\01_Homebase\\03_Projects\\" },
-            { label: "Source of Truth", path: "D:\\01_Homebase\\01_Source-of-Truth\\" },
-            { label: "Automations", path: "D:\\01_Homebase\\02_Automations\\" },
-            { label: "Scripts", path: "D:\\02_Development\\Scripts\\" },
-            { label: "Skills", path: "D:\\02_Development\\Skills\\" },
-            { label: "Copilot Agents", path: "D:\\02_Development\\CopilotAgents\\" },
-            { label: "Documentation", path: "D:\\08_Documentation\\" },
-            { label: "Downloads", path: "D:\\07_Downloads\\" },
-            { label: "Backups", path: "D:\\05_Backups-Archive\\" },
+            { label: "Active Projects", path: path.join(FOLDERS.homebase, "03_Projects") + path.sep },
+            { label: "Source of Truth", path: path.join(FOLDERS.homebase, "01_Source-of-Truth") + path.sep },
+            { label: "Automations", path: path.join(FOLDERS.homebase, "02_Automations") + path.sep },
+            { label: "Scripts", path: path.join(FOLDERS.development, "Scripts") + path.sep },
+            { label: "Skills", path: path.join(FOLDERS.development, "Skills") + path.sep },
+            { label: "Copilot Agents", path: path.join(FOLDERS.development, "CopilotAgents") + path.sep },
+            { label: "Documentation", path: FOLDERS.documentation + path.sep },
+            { label: "Downloads", path: FOLDERS.downloads + path.sep },
+            { label: "Backups", path: FOLDERS.backups + path.sep },
           ].map((link) => (
             <div
               key={link.label}
