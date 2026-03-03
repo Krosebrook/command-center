@@ -1,9 +1,19 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { KEY_FILES } from "@/lib/config";
+import { KEY_FILES, DRIVE_ROOT } from "@/lib/config";
 
 const CONTEXT_FILES = ["CLAUDE.md", "AGENTS.md", "_INDEX.md", "README.md"];
+
+/**
+ * Return true only if the resolved path stays within DRIVE_ROOT.
+ * Prevents path-traversal attacks (e.g. "../../../etc/passwd" or "C:\Windows").
+ */
+function isUnderDriveRoot(inputPath: string): boolean {
+  const normalized = path.normalize(inputPath);
+  const root = path.normalize(DRIVE_ROOT);
+  return normalized === root || normalized.startsWith(root);
+}
 
 async function collectContextFiles(
   projectPath: string
@@ -56,6 +66,14 @@ export async function POST(request: NextRequest) {
   if (!projectPath || typeof projectPath !== "string") {
     return NextResponse.json(
       { error: "projectPath is required" },
+      { status: 400 }
+    );
+  }
+
+  // Security: reject paths that escape the drive root
+  if (!isUnderDriveRoot(projectPath)) {
+    return NextResponse.json(
+      { error: "projectPath is outside the allowed drive root" },
       { status: 400 }
     );
   }

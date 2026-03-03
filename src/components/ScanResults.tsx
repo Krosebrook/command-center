@@ -3,36 +3,7 @@
 import { useState } from "react";
 import { cn } from "@/lib/utils";
 import { formatBytes } from "@/lib/utils";
-
-// -- Types ------------------------------------------------------------------
-
-type ScanIssueType =
-  | "missing-index"
-  | "orphaned"
-  | "stale"
-  | "unsorted"
-  | "large-file"
-  | "empty-dir"
-  | "missing-governance";
-
-type Severity = "info" | "warning" | "action";
-
-interface ScanResult {
-  type: ScanIssueType;
-  path: string;
-  severity: Severity;
-  details: string;
-  size?: number;
-  lastModified?: string;
-}
-
-interface DeepScanResult {
-  results: ScanResult[];
-  scannedAt: string;
-  totalIssues: number;
-  bySeverity: { info: number; warning: number; action: number };
-  byType: Record<ScanIssueType, number>;
-}
+import type { ScanIssueType, Severity, ScanResult, DeepScanResult } from "@/lib/types";
 
 // -- Helpers ----------------------------------------------------------------
 

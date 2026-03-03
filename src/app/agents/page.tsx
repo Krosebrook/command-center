@@ -1,4 +1,5 @@
-import { KEY_FILES } from "@/lib/config";
+import path from "path";
+import { KEY_FILES, FOLDERS } from "@/lib/config";
 import { readFileContent, parseAgentsTable, parseInfraTable, parseSkillsTable } from "@/lib/parser";
 import { AgentCard } from "@/components/AgentCard";
 
@@ -25,7 +26,7 @@ export default async function AgentsPage() {
         <h2 className="text-lg font-semibold mb-4">
           Copilot Agents
           <span className="text-sm font-normal text-muted-foreground ml-2">
-            D:\02_Development\CopilotAgents\
+            {path.join(FOLDERS.development, "CopilotAgents") + path.sep}
           </span>
         </h2>
         <div className="grid grid-cols-2 gap-4">
@@ -40,7 +41,7 @@ export default async function AgentsPage() {
         <h2 className="text-lg font-semibold mb-4">
           Agent Infrastructure
           <span className="text-sm font-normal text-muted-foreground ml-2">
-            D:\02_Development\Github-Agents\
+            {path.join(FOLDERS.development, "Github-Agents") + path.sep}
           </span>
         </h2>
         <div className="rounded-xl border border-border bg-card overflow-hidden">
@@ -75,7 +76,7 @@ export default async function AgentsPage() {
         <h2 className="text-lg font-semibold mb-4">
           Multi-Platform Skills
           <span className="text-sm font-normal text-muted-foreground ml-2">
-            D:\02_Development\Skills\
+            {path.join(FOLDERS.development, "Skills") + path.sep}
           </span>
         </h2>
         <div className="grid grid-cols-2 gap-4">

@@ -1,29 +1,7 @@
 "use client";
 
 import { cn } from "@/lib/utils";
-
-// -- Types ------------------------------------------------------------------
-
-type SuggestionAction = "move" | "create-index" | "archive" | "delete";
-type Confidence = "high" | "medium" | "low";
-
-interface Suggestion {
-  id: string;
-  title: string;
-  description: string;
-  action: SuggestionAction;
-  source: string;
-  destination?: string;
-  confidence: Confidence;
-}
-
-type SuggestionStatus =
-  | "pending"
-  | "accepted"
-  | "dismissed"
-  | "executing"
-  | "done"
-  | "error";
+import type { SuggestionAction, Confidence, Suggestion, SuggestionStatus } from "@/lib/types";
 
 // -- Helpers ----------------------------------------------------------------
 

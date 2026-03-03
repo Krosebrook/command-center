@@ -114,3 +114,9 @@ export async function fileExists(filePath: string): Promise<boolean> {
     return false;
   }
 }
+
+/** Invalidate the shallow scanner cache so the next call performs a fresh scan. */
+export function clearCache(): void {
+  cachedStats = null;
+  cacheTime = 0;
+}

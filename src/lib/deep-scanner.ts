@@ -8,38 +8,15 @@ import {
   GOVERNANCE_FILES,
 } from "./config";
 import { fileExists } from "./scanner";
+import type {
+  ScanIssueType,
+  Severity,
+  ScanResult,
+  DeepScanResult,
+} from "./types";
 
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export type ScanIssueType =
-  | "missing-index"
-  | "orphaned"
-  | "stale"
-  | "unsorted"
-  | "large-file"
-  | "empty-dir"
-  | "missing-governance";
-
-export type Severity = "info" | "warning" | "action";
-
-export interface ScanResult {
-  type: ScanIssueType;
-  path: string;
-  severity: Severity;
-  details: string;
-  size?: number;
-  lastModified?: string; // ISO string
-}
-
-export interface DeepScanResult {
-  results: ScanResult[];
-  scannedAt: string;
-  totalIssues: number;
-  bySeverity: { info: number; warning: number; action: number };
-  byType: Record<ScanIssueType, number>;
-}
+// Re-export types so existing importers of deep-scanner continue to work
+export type { ScanIssueType, Severity, ScanResult, DeepScanResult } from "./types";
 
 // ---------------------------------------------------------------------------
 // Cache (same pattern as scanner.ts)
@@ -398,4 +375,10 @@ export async function deepScanDrive(): Promise<DeepScanResult> {
   cacheTime = now;
 
   return cachedResult;
+}
+
+/** Invalidate the deep scanner cache so the next call performs a fresh scan. */
+export function clearDeepCache(): void {
+  cachedResult = null;
+  cacheTime = 0;
 }

@@ -1,44 +1,16 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect, Suspense } from "react";
+import { useSearchParams, useRouter } from "next/navigation";
 import { SetupStepper } from "@/components/SetupStepper";
 import { ScanResults } from "@/components/ScanResults";
 import { SuggestionCard } from "@/components/SuggestionCard";
-
-type ScanIssueType = "missing-index" | "orphaned" | "stale" | "unsorted" | "large-file" | "empty-dir" | "missing-governance";
-type Severity = "info" | "warning" | "action";
-
-interface ScanResult {
-  type: ScanIssueType;
-  path: string;
-  severity: Severity;
-  details: string;
-  size?: number;
-  lastModified?: string;
-}
-
-interface DeepScanResult {
-  results: ScanResult[];
-  scannedAt: string;
-  totalIssues: number;
-  bySeverity: { info: number; warning: number; action: number };
-  byType: Record<ScanIssueType, number>;
-}
-
-type SuggestionAction = "move" | "create-index" | "archive" | "delete";
-type Confidence = "high" | "medium" | "low";
-
-interface Suggestion {
-  id: string;
-  title: string;
-  description: string;
-  action: SuggestionAction;
-  source: string;
-  destination?: string;
-  confidence: Confidence;
-}
-
-type SuggestionStatus = "pending" | "accepted" | "dismissed" | "executing" | "done" | "error";
+import type {
+  ScanResult,
+  DeepScanResult,
+  Suggestion,
+  SuggestionStatus,
+} from "@/lib/types";
 
 const steps = [
   { label: "Scan", description: "Deep scan drive for issues" },
@@ -47,8 +19,27 @@ const steps = [
   { label: "Update", description: "Refresh governance docs" },
 ];
 
-export default function SetupPage() {
-  const [step, setStep] = useState(0);
+/** Clamp a raw URL param value to a valid wizard step index (0–3). */
+function clampStep(value: number): number {
+  return isNaN(value) || value < 0 || value > 3 ? 0 : value;
+}
+
+function SetupPageContent() {
+  const searchParams = useSearchParams();
+  const router = useRouter();
+  const [step, setStep] = useState(() =>
+    clampStep(Number(searchParams.get("step") ?? 0))
+  );
+
+  const updateStep = (newStep: number) => {
+    setStep(newStep);
+    router.push(`?step=${newStep}`, { scroll: false });
+  };
+
+  // Sync step from URL when user navigates with back/forward
+  useEffect(() => {
+    setStep(clampStep(Number(searchParams.get("step") ?? 0)));
+  }, [searchParams]);
   const [scanResult, setScanResult] = useState<DeepScanResult | null>(null);
   const [scanning, setScanning] = useState(false);
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
@@ -68,7 +59,7 @@ export default function SetupPage() {
       const res = await fetch("/api/setup/suggestions", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(results),
+        body: JSON.stringify({ results }),
       });
       if (!res.ok) throw new Error(`Suggestions failed: ${res.statusText}`);
       const data = await res.json();
@@ -90,7 +81,7 @@ export default function SetupPage() {
       const data: DeepScanResult = await res.json();
       setScanResult(data);
       await fetchSuggestions(data.results);
-      setStep(1);
+      updateStep(1);
     } catch (err) {
       console.error("Failed to run scan:", err);
       setError(err instanceof Error ? err.message : "Failed to run scan");
@@ -135,7 +126,7 @@ export default function SetupPage() {
     }
 
     setExecuting(false);
-    setStep(3);
+    updateStep(3);
   };
 
   const updateDocs = async () => {
@@ -214,7 +205,7 @@ export default function SetupPage() {
           {scanResult && (
             <div className="flex justify-end">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => updateStep(1)}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
               >
                 Review Suggestions &rarr;
@@ -233,13 +224,13 @@ export default function SetupPage() {
             </h2>
             <div className="flex gap-2">
               <button
-                onClick={() => setStep(0)}
+                onClick={() => updateStep(0)}
                 className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
               >
                 &larr; Back
               </button>
               <button
-                onClick={() => setStep(2)}
+                onClick={() => updateStep(2)}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
               >
                 Execute Accepted &rarr;
@@ -287,7 +278,7 @@ export default function SetupPage() {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(1)}
+                onClick={() => updateStep(1)}
                 className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
               >
                 &larr; Back to Review
@@ -329,7 +320,7 @@ export default function SetupPage() {
           {Object.values(suggestionStatus).some((s) => s === "done") && (
             <div className="flex justify-end">
               <button
-                onClick={() => setStep(3)}
+                onClick={() => updateStep(3)}
                 className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
               >
                 Update Docs &rarr;
@@ -349,7 +340,7 @@ export default function SetupPage() {
             </p>
             <div className="flex gap-3">
               <button
-                onClick={() => setStep(2)}
+                onClick={() => updateStep(2)}
                 className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
               >
                 &larr; Back
@@ -376,5 +367,13 @@ export default function SetupPage() {
         </div>
       )}
     </div>
+  );
+}
+
+export default function SetupPage() {
+  return (
+    <Suspense fallback={<div className="max-w-6xl"><p className="text-muted-foreground">Loading...</p></div>}>
+      <SetupPageContent />
+    </Suspense>
   );
 }

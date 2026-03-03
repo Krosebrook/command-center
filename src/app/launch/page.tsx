@@ -1,32 +1,20 @@
 "use client";
 
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { ContextPreview } from "@/components/ContextPreview";
+import { PROJECTS, FOLDERS } from "@/lib/config";
+import path from "path";
 
+// Derive presets from the canonical PROJECTS config plus this application itself
 const PRESETS = [
-  {
-    name: "FlashFusion",
-    path: "D:\\01_Homebase\\01_Source-of-Truth\\FlashFusion",
-    description: "Multi-provider AI + e-commerce platform",
-  },
-  {
-    name: "INTINC",
-    path: "D:\\03_INTInc\\INTINC",
-    description: "INT Inc / Interact business platform",
-  },
-  {
-    name: "KAR",
-    path: "D:\\01_Homebase\\01_Source-of-Truth\\KAR",
-    description: "KAR project",
-  },
-  {
-    name: "nexus-app-factory",
-    path: "D:\\01_Homebase\\00_Core\\nexus-app-factory",
-    description: "Nexus app scaffolding factory",
-  },
+  ...PROJECTS.map((p) => ({
+    name: p.name,
+    path: p.path,
+    description: p.description,
+  })),
   {
     name: "Command Center",
-    path: "D:\\01_Homebase\\03_Projects\\Projects\\Active\\command-center",
+    path: path.join(FOLDERS.homebase, "03_Projects", "Projects", "Active", "command-center"),
     description: "This dashboard application",
   },
 ];
