@@ -100,7 +100,7 @@ export default async function ProjectsPage() {
       {activeNames.length > 0 && (
         <div>
           <h2 className="text-lg font-semibold mb-4">
-            Active Projects (D:\01_Homebase\03_Projects\Projects\Active\)
+            Active Projects ({path.join(FOLDERS.homebase, "03_Projects", "Projects", "Active") + path.sep})
           </h2>
           <div className="grid grid-cols-3 gap-3">
             {activeNames.map((name) => (

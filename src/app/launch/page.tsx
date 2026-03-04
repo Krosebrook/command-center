@@ -30,9 +30,11 @@ export default function LaunchPage() {
   const [bundle, setBundle] = useState<ContextBundle | null>(null);
   const [loading, setLoading] = useState(false);
   const [customPath, setCustomPath] = useState("");
+  const [error, setError] = useState<string | null>(null);
 
   const loadContext = async (projectPath: string, projectName: string) => {
     setLoading(true);
+    setError(null);
     try {
       const res = await fetch("/api/context", {
         method: "POST",
@@ -40,9 +42,13 @@ export default function LaunchPage() {
         body: JSON.stringify({ projectPath, projectName }),
       });
       const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.error ?? `Request failed: ${res.statusText}`);
+      }
       setBundle(data);
     } catch (err) {
       console.error("Failed to load context:", err);
+      setError(err instanceof Error ? err.message : "Failed to load context");
     } finally {
       setLoading(false);
     }
@@ -113,6 +119,13 @@ export default function LaunchPage() {
           </button>
         </div>
       </div>
+
+      {/* Error */}
+      {error && (
+        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
+          {error}
+        </div>
+      )}
 
       {/* Loading */}
       {loading && (
