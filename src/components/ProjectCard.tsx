@@ -51,7 +51,7 @@ export function ProjectCard({
       </div>
       <div className="flex items-center justify-between text-xs text-muted-foreground">
         <span className="font-mono truncate max-w-[200px]" title={path}>
-          {path.replace("D:\\", "D:\\")}
+          {path}
         </span>
         <div className="flex gap-3">
           {fileCount !== undefined && <span>{fileCount} files</span>}
