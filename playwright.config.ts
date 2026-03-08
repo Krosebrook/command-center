@@ -11,6 +11,9 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    launchOptions: {
+      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+    },
   },
   projects: [
     {

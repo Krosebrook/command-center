@@ -40,6 +40,14 @@ export function getDb() {
         unpushed BOOLEAN NOT NULL,
         FOREIGN KEY(scan_id) REFERENCES scan_history(id)
       );
+
+      CREATE TABLE IF NOT EXISTS project_embeddings (
+        id TEXT PRIMARY KEY,
+        project_name TEXT NOT NULL,
+        content TEXT NOT NULL,
+        embedding TEXT NOT NULL,
+        metadata TEXT
+      );
     `);
 
     logger.info("Initialized local SQLite metrics database");
