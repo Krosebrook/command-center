@@ -8,6 +8,12 @@ interface ProjectCardProps {
   path: string;
   fileCount?: number;
   lastModified?: string;
+  git?: {
+    isRepo: boolean;
+    branch: string | null;
+    hasChanges: boolean;
+    unpushed: boolean;
+  };
 }
 
 const statusConfig: Record<string, { label: string; cls: string; dot: string }> = {
@@ -41,6 +47,7 @@ export function ProjectCard({
   path: projectPath,
   fileCount,
   lastModified,
+  git,
 }: ProjectCardProps) {
   const config = statusConfig[status] ?? statusConfig.archived;
 
@@ -61,7 +68,7 @@ export function ProjectCard({
         </span>
       </div>
       <p className="text-sm text-muted-foreground mb-3 line-clamp-2">{description}</p>
-      <div className="flex flex-wrap gap-1.5 mb-3">
+      <div className="flex flex-wrap items-center gap-1.5 mb-3">
         {techStack.map((tech) => (
           <span
             key={tech}
@@ -70,6 +77,14 @@ export function ProjectCard({
             {tech}
           </span>
         ))}
+        {git?.isRepo && git.branch && (
+          <span className="text-[10px] px-2 py-0.5 rounded border border-primary/20 text-primary font-mono flex items-center gap-1">
+            <svg xmlns="http://www.w3.org/2000/svg" width="10" height="10" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M15 6v12a3 3 0 1 0 3-3H6a3 3 0 1 0 3 3V6a3 3 0 1 0-3 3h12a3 3 0 1 0-3-3"/></svg>
+            {git.branch}
+            {git.hasChanges && <span className="text-amber-400" title="Uncommitted changes">*</span>}
+            {git.unpushed && <span className="text-blue-400" title="Unpushed commits">↑</span>}
+          </span>
+        )}
       </div>
       <div className="flex items-center justify-between text-[10px] text-muted-foreground font-mono">
         <span className="truncate max-w-[160px] sm:max-w-[200px]" title={projectPath}>

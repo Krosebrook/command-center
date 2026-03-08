@@ -5,6 +5,7 @@ import { ProjectCard } from "@/components/ProjectCard";
 import { DriveHealthBar } from "@/components/DriveHealthBar";
 import { SemanticSearch } from "@/components/SemanticSearch";
 import { formatBytes, timeAgo } from "@/lib/utils";
+import { getGitStatus } from "@/lib/git-utils";
 import path from "path";
 
 export const dynamic = "force-dynamic";
@@ -15,6 +16,8 @@ export default async function DashboardPage() {
   const needsAttention = stats.folders.filter(
     (f) => f.name === "07_Downloads" || f.name === "08_Documentation",
   );
+
+  const gitStatuses = await Promise.all(PROJECTS.map(p => getGitStatus(p.path)));
 
   return (
     <div className="max-w-6xl space-y-6 sm:space-y-8">
@@ -109,8 +112,8 @@ export default async function DashboardPage() {
             <div className="h-px flex-1 bg-border/50" />
           </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3 stagger-children">
-            {PROJECTS.map((project) => (
-              <ProjectCard key={project.name} {...project} />
+            {PROJECTS.map((project, idx) => (
+              <ProjectCard key={project.name} {...project} git={gitStatuses[idx]} />
             ))}
           </div>
         </section>
