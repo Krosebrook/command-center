@@ -105,7 +105,8 @@ If you are running in WSL, the D:\ drive is automatically available at `/mnt/d/`
 ### Tests Failing
 
 - **Unit tests**: Make sure `jsdom` is available (`npm install`). Tests run in a jsdom environment with `@testing-library/react`.
-- **E2E tests**: Playwright requires a running server. The config starts one automatically via `npm run build && npm run start`. Install browsers first: `npx playwright install`.
+- **E2E tests**: Playwright requires a running dev server on port 3000. Start it with `npm run dev` before running `npm run test:e2e`. Install browsers first: `npx playwright install`.
+- **E2E in WSL2**: E2E tests use Playwright's HTTP `request` fixture (not a browser) to work in WSL2 without GUI libraries. If you want full browser-based tests, install system deps: `sudo apt-get install -y libnspr4 libnss3 libasound2t64`.
 
 ## Related Documentation
 

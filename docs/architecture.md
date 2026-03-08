@@ -79,7 +79,10 @@ src/
 |   +-- SuggestionCard.tsx  # Suggestion with accept/dismiss/execute
 |   +-- ContextPreview.tsx  # AI context bundle preview
 |   +-- SetupStepper.tsx    # Setup wizard progress indicator
-+-- hooks/                  # Custom React hooks
++-- hooks/
+|   +-- useSafeAsync.ts      # Safe async ops with timeout, retry, abort
++-- components/
+|   +-- ErrorFallback.tsx     # Reusable client-side error boundary fallback
 +-- lib/
 |   +-- config.ts           # Drive paths, projects, sort rules, governance files
 |   +-- scanner.ts          # Shallow scan with 5-min cache
@@ -105,7 +108,13 @@ Next.js 15 uses Server Components by default. Command Center follows this conven
 - **Client Components**: Interactive pages that require user input, state management, or browser APIs. The AI Launcher (`/launch`) and Setup Walkthrough (`/setup`) use `"use client"` because they manage multi-step form state, clipboard operations, and dynamic API calls.
 - **Shared Components**: UI primitives in `src/components/ui/` are designed to work in both contexts. Components that use `onClick`, `useState`, or other client-only features are marked `"use client"`.
 
+- **Lazy Loading**: Heavy client components (SetupStepper, ScanResults, SuggestionCard, ContextPreview) are loaded with `next/dynamic` and `ssr: false` to reduce initial bundle size. Server-rendered sections use `<Suspense>` boundaries with Skeleton fallbacks.
+
 **Rule**: Client components must never import Node.js modules like `path` or `fs`. Use the `basename()` utility from `src/lib/utils.ts` instead.
+
+### Background Monitor
+
+The `src/instrumentation.ts` file registers a background monitor via Next.js instrumentation hooks. When the server starts, `startBackgroundMonitor()` in `src/lib/monitor.ts` runs a drive scan every 10 minutes using `setInterval`. A global reference prevents duplicate intervals during HMR.
 
 ## Data Flow
 

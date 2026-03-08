@@ -310,7 +310,7 @@ Executes a file system action. Supports four operations: move, create-index, arc
 
 | Field | Type | Required | Description |
 |-------|------|----------|-------------|
-| `action` | `"move" \| "create-index" \| "archive" \| "delete"` | Yes | The operation to perform. |
+| `action` | `"move" \| "create-index" \| "create-file" \| "archive" \| "delete"` | Yes | The operation to perform. |
 | `source` | string | Yes | Source path. Must be under D:\. Must exist. |
 | `destination` | string | No | Destination path. Required for `move`. Must be under D:\. |
 
