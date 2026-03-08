@@ -59,6 +59,7 @@ export const POST = withErrorHandling(async (request: Request) => {
           appendText +
           todoContent.slice(insertPos);
       }
+    }
     await fs.mkdir(path.dirname(KEY_FILES.todo), { recursive: true });
     await fs.writeFile(KEY_FILES.todo, todoContent, "utf-8");
   }
