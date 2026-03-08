@@ -31,6 +31,10 @@ export interface AutomationCategory {
 
 export async function readFileContent(filePath: string): Promise<string> {
   try {
+    const stat = await fs.stat(filePath);
+    if (stat.size > 10 * 1024 * 1024) {
+      return ""; // Skip files larger than 10MB
+    }
     return await fs.readFile(filePath, "utf-8");
   } catch {
     return "";
@@ -38,8 +42,10 @@ export async function readFileContent(filePath: string): Promise<string> {
 }
 
 export function parseAgentsTable(markdown: string): AgentInfo[] {
+  if (!markdown) return [];
   const agents: AgentInfo[] = [];
   const lines = markdown.split("\n");
+  if (lines.length === 0) return [];
 
   let inCopilotTable = false;
   for (const line of lines) {
@@ -132,6 +138,7 @@ export function parseSkillsTable(markdown: string): SkillPlatform[] {
 }
 
 export function parseTodoItems(markdown: string): { text: string; done: boolean; section: string }[] {
+  if (!markdown) return [];
   const items: { text: string; done: boolean; section: string }[] = [];
   let currentSection = "";
 

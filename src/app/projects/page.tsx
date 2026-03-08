@@ -33,7 +33,9 @@ async function getProjectDetails(): Promise<ProjectDetail[]> {
         try {
           const stat = await fs.stat(project.path);
           lastModified = formatDate(stat.mtime);
-        } catch {}
+        } catch {
+          // Skip if stat fails
+        }
         const indexPath = path.join(project.path, "_INDEX.md");
         if (await fileExists(indexPath)) {
           indexContent = await readFileContent(indexPath);
@@ -47,7 +49,7 @@ async function getProjectDetails(): Promise<ProjectDetail[]> {
         indexContent,
         exists,
       };
-    })
+    }),
   );
 }
 
@@ -68,19 +70,18 @@ export default async function ProjectsPage() {
   ]);
 
   return (
-    <div className="max-w-6xl space-y-8">
+    <div className="max-w-6xl space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">Project Explorer</h1>
-        <p className="text-muted-foreground mt-1">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">Project Explorer</h1>
+        <p className="text-muted-foreground mt-1 text-sm">
           {projects.length} defined projects &middot;{" "}
           {activeNames.length} in Active folder
         </p>
       </div>
 
-      {/* Key Projects */}
-      <div>
-        <h2 className="text-lg font-semibold mb-4">Source-of-Truth Projects</h2>
-        <div className="grid grid-cols-2 gap-4">
+      <section aria-labelledby="sot-heading">
+        <h2 id="sot-heading" className="text-lg font-semibold mb-4">Source-of-Truth Projects</h2>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {projects.map((p) => (
             <ProjectCard
               key={p.name}
@@ -94,15 +95,17 @@ export default async function ProjectsPage() {
             />
           ))}
         </div>
-      </div>
+      </section>
 
-      {/* Active Projects */}
       {activeNames.length > 0 && (
-        <div>
-          <h2 className="text-lg font-semibold mb-4">
-            Active Projects ({path.join(FOLDERS.homebase, "03_Projects", "Projects", "Active") + path.sep})
+        <section aria-labelledby="active-heading">
+          <h2 id="active-heading" className="text-lg font-semibold mb-4">
+            Active Projects
+            <span className="text-sm font-normal text-muted-foreground ml-2 hidden sm:inline">
+              {path.join(FOLDERS.homebase, "03_Projects", "Projects", "Active") + path.sep}
+            </span>
           </h2>
-          <div className="grid grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
             {activeNames.map((name) => (
               <div
                 key={name}
@@ -115,7 +118,7 @@ export default async function ProjectsPage() {
               </div>
             ))}
           </div>
-        </div>
+        </section>
       )}
     </div>
   );

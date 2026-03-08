@@ -18,7 +18,7 @@ export function ContextPreview({ projectName, context, files }: ContextPreviewPr
   };
 
   return (
-    <div className="rounded-xl border border-border bg-card overflow-hidden">
+    <div role="region" aria-label="Context preview" className="rounded-xl border border-border bg-card overflow-hidden">
       <div className="p-4 border-b border-border flex items-center justify-between">
         <div>
           <h3 className="font-semibold">{projectName} Context Bundle</h3>
@@ -28,6 +28,8 @@ export function ContextPreview({ projectName, context, files }: ContextPreviewPr
         </div>
         <button
           onClick={handleCopy}
+          aria-label="Copy context to clipboard"
+          aria-live="polite"
           className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors"
         >
           {copied ? "Copied!" : "Copy Context"}

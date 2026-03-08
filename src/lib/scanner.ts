@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { DRIVE_ROOT } from "./config";
+import { logger } from "./logger";
 
 export interface FolderInfo {
   name: string;
@@ -16,6 +17,16 @@ export interface DriveStats {
   totalFiles: number;
   totalSize: number;
   lastScan: Date;
+  partialFailures: number;
+}
+
+export async function isDriveAccessible(): Promise<boolean> {
+  try {
+    await fs.access(DRIVE_ROOT);
+    return true;
+  } catch {
+    return false;
+  }
 }
 
 let cachedStats: DriveStats | null = null;
@@ -62,21 +73,45 @@ export async function scanDrive(): Promise<DriveStats> {
     return cachedStats;
   }
 
-  const entries = await fs.readdir(DRIVE_ROOT, { withFileTypes: true });
-  const numbered = entries.filter(
-    (e) => e.isDirectory() && /^\d{2}_/.test(e.name)
-  );
+  try {
+    const entries = await fs.readdir(DRIVE_ROOT, { withFileTypes: true });
+    const numbered = entries.filter(
+      (e) => e.isDirectory() && /^\d{2}_/.test(e.name)
+    );
 
-  const folders = await Promise.all(
-    numbered.map((e) => getFolderStats(path.join(DRIVE_ROOT, e.name)))
-  );
+    const settled = await Promise.allSettled(
+      numbered.map((e) => getFolderStats(path.join(DRIVE_ROOT, e.name)))
+    );
 
-  const totalFiles = folders.reduce((sum, f) => sum + f.fileCount, 0);
-  const totalSize = folders.reduce((sum, f) => sum + f.totalSize, 0);
+    const folders: FolderInfo[] = [];
+    let partialFailures = 0;
+    for (let i = 0; i < settled.length; i++) {
+      const result = settled[i];
+      if (result.status === "fulfilled") {
+        folders.push(result.value);
+      } else {
+        partialFailures++;
+        logger.warn("Skipped folder due to error", {
+          folder: numbered[i].name,
+          error: String(result.reason),
+        });
+      }
+    }
 
-  cachedStats = { folders, totalFiles, totalSize, lastScan: new Date() };
-  cacheTime = now;
-  return cachedStats;
+    const totalFiles = folders.reduce((sum, f) => sum + f.fileCount, 0);
+    const totalSize = folders.reduce((sum, f) => sum + f.totalSize, 0);
+
+    cachedStats = { folders, totalFiles, totalSize, lastScan: new Date(), partialFailures };
+    cacheTime = now;
+    return cachedStats;
+  } catch (error) {
+    logger.error("Failed to scan drive", {
+      driveRoot: DRIVE_ROOT,
+      error: error instanceof Error ? error.message : String(error),
+    });
+    // Return empty stats so the UI can show a degraded state
+    return { folders: [], totalFiles: 0, totalSize: 0, lastScan: new Date(), partialFailures: 0 };
+  }
 }
 
 export async function getSubfolders(dirPath: string): Promise<string[]> {

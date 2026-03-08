@@ -2,6 +2,7 @@
 
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useState, useEffect } from "react";
 import { cn } from "@/lib/utils";
 
 const navItems = [
@@ -26,16 +27,60 @@ const icons: Record<string, string> = {
 
 export function NavSidebar() {
   const pathname = usePathname();
+  const [mobileOpen, setMobileOpen] = useState(false);
 
-  return (
-    <aside className="fixed left-0 top-0 h-screen w-64 bg-card border-r border-border flex flex-col z-50">
-      <div className="p-6 border-b border-border">
-        <h1 className="text-lg font-bold tracking-tight">
-          <span className="text-primary">D:\</span> Command Center
-        </h1>
-        <p className="text-xs text-muted-foreground mt-1">Visual Golden Thread</p>
+  useEffect(() => {
+    setMobileOpen(false);
+  }, [pathname]);
+
+  useEffect(() => {
+    function handleKeyDown(e: KeyboardEvent) {
+      if (e.key === "Escape" && mobileOpen) setMobileOpen(false);
+    }
+    document.addEventListener("keydown", handleKeyDown);
+    return () => document.removeEventListener("keydown", handleKeyDown);
+  }, [mobileOpen]);
+
+  useEffect(() => {
+    document.body.style.overflow = mobileOpen ? "hidden" : "";
+    return () => { document.body.style.overflow = ""; };
+  }, [mobileOpen]);
+
+  const sidebarContent = (
+    <>
+      {/* Header */}
+      <div className="p-5 border-b border-border/50">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            {/* Signal indicator */}
+            <div className="relative flex h-2.5 w-2.5">
+              <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-emerald-400" />
+            </div>
+            <div>
+              <h1 className="text-sm font-bold tracking-tight font-mono uppercase">
+                <span className="text-primary text-glow">D:\</span>
+                <span className="text-foreground/80"> CMD</span>
+              </h1>
+              <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-widest mt-0.5">
+                Control Center
+              </p>
+            </div>
+          </div>
+          <button
+            className="lg:hidden p-2 rounded-lg hover:bg-accent transition-colors"
+            onClick={() => setMobileOpen(false)}
+            aria-label="Close navigation menu"
+          >
+            <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+              <path d="M18 6L6 18M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
       </div>
-      <nav className="flex-1 p-4 space-y-1">
+
+      {/* Nav */}
+      <nav className="flex-1 p-3 space-y-0.5" aria-label="Main navigation">
         {navItems.map((item) => {
           const isActive =
             item.href === "/" ? pathname === "/" : pathname.startsWith(item.href);
@@ -43,34 +88,93 @@ export function NavSidebar() {
             <Link
               key={item.href}
               href={item.href}
+              aria-current={isActive ? "page" : undefined}
               className={cn(
-                "flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-colors",
+                "group relative flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-200",
+                "focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary/50 focus-visible:ring-offset-2 focus-visible:ring-offset-card",
                 isActive
-                  ? "bg-primary/10 text-primary"
-                  : "text-muted-foreground hover:text-foreground hover:bg-accent"
+                  ? "bg-primary/8 text-primary nav-glow"
+                  : "text-muted-foreground hover:text-foreground hover:bg-accent/50",
               )}
             >
               <svg
-                className="w-4 h-4 shrink-0"
+                className={cn(
+                  "w-4 h-4 shrink-0 transition-colors",
+                  isActive && "drop-shadow-[0_0_6px_hsl(210_100%_52%/0.5)]",
+                )}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
                 strokeWidth={2}
                 strokeLinecap="round"
                 strokeLinejoin="round"
+                aria-hidden="true"
               >
                 <path d={icons[item.icon]} />
               </svg>
-              {item.label}
+              <span className="font-mono text-xs uppercase tracking-wide">
+                {item.label}
+              </span>
             </Link>
           );
         })}
       </nav>
-      <div className="p-4 border-t border-border">
-        <p className="text-xs text-muted-foreground">
-          Reads from D:\ drive structure
-        </p>
+
+      {/* Footer */}
+      <div className="p-4 border-t border-border/50">
+        <div className="flex items-center gap-2">
+          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" aria-hidden="true" />
+          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
+            Live &middot; D:\ Drive
+          </p>
+        </div>
       </div>
-    </aside>
+    </>
+  );
+
+  return (
+    <>
+      {/* Mobile hamburger */}
+      <button
+        className={cn(
+          "fixed top-3 left-3 z-50 lg:hidden p-2.5 rounded-lg",
+          "bg-card/90 backdrop-blur border border-border",
+          "hover:bg-accent hover:shadow-glow transition-all",
+        )}
+        onClick={() => setMobileOpen(true)}
+        aria-label="Open navigation menu"
+        aria-expanded={mobileOpen}
+        aria-controls="nav-sidebar"
+      >
+        <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
+          <path d="M3 12h18M3 6h18M3 18h18" />
+        </svg>
+      </button>
+
+      {/* Mobile overlay */}
+      {mobileOpen && (
+        <div
+          className="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm lg:hidden"
+          onClick={() => setMobileOpen(false)}
+          aria-hidden="true"
+        />
+      )}
+
+      {/* Sidebar */}
+      <aside
+        id="nav-sidebar"
+        className={cn(
+          "fixed left-0 top-0 h-screen w-60 flex flex-col z-50",
+          "bg-card/95 backdrop-blur-xl border-r border-border/50",
+          "transition-transform duration-300 ease-in-out",
+          "lg:translate-x-0",
+          mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
+        )}
+        role="navigation"
+        aria-label="Main"
+      >
+        {sidebarContent}
+      </aside>
+    </>
   );
 }

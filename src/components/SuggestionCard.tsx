@@ -87,6 +87,8 @@ export function SuggestionCard({
 
   return (
     <div
+      role="article"
+      aria-label={suggestion.title}
       className={cn(
         "rounded-xl border bg-card p-5 transition-all",
         borderColor,
@@ -136,7 +138,7 @@ export function SuggestionCard({
       </div>
 
       {/* Actions */}
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-2" aria-live="polite">
         {status === "executing" ? (
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
             <Spinner />

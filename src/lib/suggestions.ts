@@ -193,7 +193,7 @@ function handleMissingGovernance(
     id: `suggestion-${index}`,
     title: `Create governance file "${fileName}"`,
     description: `${result.details}. Create the file to maintain drive governance structure.`,
-    action: "create-index",
+    action: "create-file",
     source: result.path,
     confidence: "medium",
   };

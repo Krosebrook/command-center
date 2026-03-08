@@ -1,7 +1,6 @@
 import fs from "fs/promises";
 import path from "path";
 import { FOLDERS, AUTOMATION_CATEGORIES } from "@/lib/config";
-import { countFiles } from "@/lib/scanner";
 
 export const dynamic = "force-dynamic";
 
@@ -23,57 +22,37 @@ async function getCategories(): Promise<CategoryInfo[]> {
 
       try {
         const entries = await fs.readdir(catPath, { withFileTypes: true });
-        subfolders = entries
-          .filter((e) => e.isDirectory())
-          .map((e) => e.name);
+        subfolders = entries.filter((e) => e.isDirectory()).map((e) => e.name);
         itemCount = entries.length;
-      } catch {}
+      } catch {
+        // Category folder may not exist
+      }
 
       return { name: cat, path: catPath, itemCount, subfolders };
-    })
+    }),
   );
 }
-
-const categoryIcons: Record<string, string> = {
-  Agents: "bot",
-  Assistants: "headphones",
-  Automations: "repeat",
-  Ecom: "shopping-cart",
-  Education: "book",
-  HR: "users",
-  IT: "server",
-  Marketing: "megaphone",
-  Media: "film",
-  Prompts: "message-square",
-  RAG: "database",
-  Sales: "trending-up",
-  Security: "shield",
-  SEO: "search",
-  Social: "share-2",
-  Support: "life-buoy",
-  UI: "layout",
-};
 
 export default async function AutomationsPage() {
   const categories = await getCategories();
   const totalItems = categories.reduce((sum, c) => sum + c.itemCount, 0);
 
   return (
-    <div className="max-w-6xl space-y-8">
+    <div className="max-w-6xl space-y-6 sm:space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
           Automation Library
         </h1>
-        <p className="text-muted-foreground mt-1">
+        <p className="text-muted-foreground mt-1 text-sm">
           {categories.length} categories &middot; {totalItems} total items
         </p>
       </div>
 
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 stagger-children">
         {categories.map((cat) => (
           <div
             key={cat.name}
-            className="rounded-xl border border-border bg-card p-5 hover:border-primary/30 transition-colors"
+            className="hud-card p-5 hover:border-primary/20 transition-colors"
           >
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-semibold">{cat.name}</h3>

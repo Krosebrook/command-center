@@ -1,26 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { DRIVE_ROOT, WALKTHROUGH_LOG_PATH } from "@/lib/config";
+import { WALKTHROUGH_LOG_PATH } from "@/lib/config";
 import { fileExists, clearCache } from "@/lib/scanner";
 import { clearDeepCache } from "@/lib/deep-scanner";
+import { assertUnderDriveRoot, safeParseBody } from "@/lib/security";
+import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
+import { ValidationError, NotFoundError } from "@/lib/errors";
+import { logger } from "@/lib/logger";
+import { ActionRequestSchema } from "@/lib/validation";
 import type { WalkthroughLogEntry } from "@/lib/types";
 
 const LOG_PATH = WALKTHROUGH_LOG_PATH;
-
-const VALID_ACTIONS = ["move", "create-index", "archive", "delete"] as const;
-type ActionType = (typeof VALID_ACTIONS)[number];
-
-/**
- * Return true only if the resolved path stays within DRIVE_ROOT.
- * Prevents path-traversal attacks (e.g. "../../../etc/passwd" or "C:\Windows").
- */
-function isUnderDriveRoot(inputPath: string): boolean {
-  const normalized = path.normalize(inputPath);
-  const root = path.normalize(DRIVE_ROOT);
-  // DRIVE_ROOT ends with a separator (e.g. "D:\"), so prefix check is safe.
-  return normalized === root || normalized.startsWith(root);
-}
 
 async function appendToLog(entry: WalkthroughLogEntry) {
   let log: WalkthroughLogEntry[] = [];
@@ -35,57 +26,28 @@ async function appendToLog(entry: WalkthroughLogEntry) {
   await fs.writeFile(LOG_PATH, JSON.stringify(log, null, 2), "utf-8");
 }
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { action, source, destination } = body as {
-    action: string;
-    source: string;
-    destination?: string;
-  };
-
-  if (!action || !source) {
-    return NextResponse.json(
-      { error: "action and source are required" },
-      { status: 400 }
-    );
+export const POST = withErrorHandling(async (request: Request) => {
+  const rawBody = await safeParseBody(request);
+  const parsed = ActionRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid request", {
+      issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    });
   }
+  const { action, source, destination } = parsed.data;
 
-  if (!VALID_ACTIONS.includes(action as ActionType)) {
-    return NextResponse.json(
-      { error: `Invalid action type: ${action}. Valid actions: ${VALID_ACTIONS.join(", ")}` },
-      { status: 400 }
-    );
-  }
+  assertUnderDriveRoot(source, "source");
+  if (destination) assertUnderDriveRoot(destination, "destination");
 
-  // Security: reject paths that escape the drive root
-  if (!isUnderDriveRoot(source)) {
-    return NextResponse.json(
-      { error: "source path is outside the allowed drive root" },
-      { status: 400 }
-    );
-  }
-  if (destination && !isUnderDriveRoot(destination)) {
-    return NextResponse.json(
-      { error: "destination path is outside the allowed drive root" },
-      { status: 400 }
-    );
-  }
-
-  if (!(await fileExists(source))) {
-    return NextResponse.json(
-      { error: `Source does not exist: ${source}` },
-      { status: 404 }
-    );
+  if (action !== "create-file" && !(await fileExists(source))) {
+    throw new NotFoundError("Source", source);
   }
 
   try {
-    switch (action as ActionType) {
+    switch (action) {
       case "move": {
         if (!destination) {
-          return NextResponse.json(
-            { error: "destination is required for move action" },
-            { status: 400 }
-          );
+          throw new ValidationError("destination is required for move action");
         }
         await fs.mkdir(destination, { recursive: true });
         const targetPath = path.join(destination, path.basename(source));
@@ -93,7 +55,8 @@ export async function POST(request: NextRequest) {
         await appendToLog({ action, source, destination, timestamp: new Date().toISOString() });
         clearCache();
         clearDeepCache();
-        return NextResponse.json({
+        logger.info("File moved", { source, destination: targetPath });
+        return jsonSuccess({
           success: true,
           message: `Moved ${path.basename(source)} to ${destination}`,
         });
@@ -118,23 +81,41 @@ export async function POST(request: NextRequest) {
         await fs.writeFile(indexPath, lines.join("\n"), "utf-8");
         await appendToLog({ action, source, timestamp: new Date().toISOString() });
         clearDeepCache();
-        return NextResponse.json({
+        logger.info("Index created", { path: indexPath, entries: entries.length });
+        return jsonSuccess({
           success: true,
           message: `Created _INDEX.md in ${folderName} with ${entries.length} entries`,
         });
       }
 
+      case "create-file": {
+        const folderPath = path.dirname(source);
+        const fileName = path.basename(source);
+        await fs.mkdir(folderPath, { recursive: true });
+        
+        let content = `# ${fileName}\n\n`;
+        if (fileName === "TODO.md") content += "## Pending Items\n";
+        else if (fileName === "CHANGELOG.md") content += "## Initialization\n- Created file\n";
+
+        await fs.writeFile(source, content, "utf-8");
+        await appendToLog({ action, source, timestamp: new Date().toISOString() });
+        clearDeepCache();
+        logger.info("Governance file created", { path: source });
+        return jsonSuccess({
+          success: true,
+          message: `Created ${fileName}`,
+        });
+      }
+
       case "archive": {
-        // Validate that the source lives inside an "Active" directory (exact segment match)
         if (!/[/\\]Active[/\\]/.test(source)) {
-          return NextResponse.json(
-            { error: "archive action requires source to be inside an Active directory" },
-            { status: 400 }
+          throw new ValidationError(
+            "archive action requires source to be inside an Active directory",
           );
         }
         const archiveBase = source.replace(
           /[/\\]Active[/\\]/,
-          `${path.sep}Archive${path.sep}`
+          `${path.sep}Archive${path.sep}`,
         );
         const datePrefix = new Date().toISOString().split("T")[0];
         const archiveName = `${datePrefix}_${path.basename(source)}`;
@@ -150,27 +131,29 @@ export async function POST(request: NextRequest) {
         });
         clearCache();
         clearDeepCache();
-        return NextResponse.json({
+        logger.info("Project archived", { source, destination: archivePath });
+        return jsonSuccess({
           success: true,
           message: `Archived ${path.basename(source)} to ${archivePath}`,
         });
       }
 
       case "delete": {
+        logger.warn("Delete action executed", { source });
         await fs.rm(source, { recursive: true });
         await appendToLog({ action, source, timestamp: new Date().toISOString() });
         clearCache();
         clearDeepCache();
-        return NextResponse.json({
+        return jsonSuccess({
           success: true,
           message: `Deleted ${source}`,
         });
       }
     }
+
+    // TypeScript exhaustiveness — shouldn't reach here
+    throw new ValidationError(`Unhandled action: ${action}`);
   } catch (error) {
-    return NextResponse.json(
-      { error: `Action "${action}" failed`, details: String(error) },
-      { status: 500 }
-    );
+    throw error; // Let withErrorHandling handle it
   }
-}
+});

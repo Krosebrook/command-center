@@ -1,31 +1,23 @@
-import { NextRequest, NextResponse } from "next/server";
 import fs from "fs/promises";
 import path from "path";
-import { KEY_FILES, DRIVE_ROOT } from "@/lib/config";
+import { KEY_FILES } from "@/lib/config";
+import { assertUnderDriveRoot, safeParseBody } from "@/lib/security";
+import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
+import { ValidationError } from "@/lib/errors";
+import { ContextRequestSchema } from "@/lib/validation";
 
 const CONTEXT_FILES = ["CLAUDE.md", "AGENTS.md", "_INDEX.md", "README.md"];
 
-/**
- * Return true only if the resolved path stays within DRIVE_ROOT.
- * Prevents path-traversal attacks (e.g. "../../../etc/passwd" or "C:\Windows").
- */
-function isUnderDriveRoot(inputPath: string): boolean {
-  const normalized = path.normalize(inputPath);
-  const root = path.normalize(DRIVE_ROOT);
-  return normalized === root || normalized.startsWith(root);
-}
-
 async function collectContextFiles(
-  projectPath: string
+  projectPath: string,
 ): Promise<{ name: string; content: string }[]> {
   const collected: { name: string; content: string }[] = [];
 
-  // Project-level context files
   for (const filename of CONTEXT_FILES) {
     try {
       const content = await fs.readFile(
         path.join(projectPath, filename),
-        "utf-8"
+        "utf-8",
       );
       collected.push({ name: `project/${filename}`, content });
     } catch {
@@ -33,7 +25,6 @@ async function collectContextFiles(
     }
   }
 
-  // Also check .claude directory
   try {
     const claudeDir = path.join(projectPath, ".claude");
     const entries = await fs.readdir(claudeDir);
@@ -42,53 +33,48 @@ async function collectContextFiles(
         try {
           const content = await fs.readFile(
             path.join(claudeDir, entry),
-            "utf-8"
+            "utf-8",
           );
           collected.push({ name: `.claude/${entry}`, content });
-        } catch {}
+        } catch {
+          // Skip unreadable files
+        }
       }
     }
-  } catch {}
+  } catch {
+    // .claude dir doesn't exist
+  }
 
-  // Drive-level context
   try {
     const driveClaudeContent = await fs.readFile(KEY_FILES.claude, "utf-8");
     collected.push({ name: "drive/CLAUDE.md", content: driveClaudeContent });
-  } catch {}
+  } catch {
+    // Drive CLAUDE.md doesn't exist
+  }
 
   return collected;
 }
 
-export async function POST(request: NextRequest) {
-  const body = await request.json();
-  const { projectPath, projectName } = body;
-
-  if (!projectPath || typeof projectPath !== "string") {
-    return NextResponse.json(
-      { error: "projectPath is required" },
-      { status: 400 }
-    );
+export const POST = withErrorHandling(async (request: Request) => {
+  const rawBody = await safeParseBody(request);
+  const parsed = ContextRequestSchema.safeParse(rawBody);
+  if (!parsed.success) {
+    throw new ValidationError("Invalid request", {
+      issues: parsed.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+    });
   }
+  const { projectPath, projectName } = parsed.data;
 
-  // Security: reject paths that escape the drive root
-  if (!isUnderDriveRoot(projectPath)) {
-    return NextResponse.json(
-      { error: "projectPath is outside the allowed drive root" },
-      { status: 400 }
-    );
-  }
+  assertUnderDriveRoot(projectPath, "projectPath");
 
   const files = await collectContextFiles(projectPath);
   const context = files
-    .map(
-      (f) =>
-        `# --- ${f.name} ---\n\n${f.content}`
-    )
+    .map((f) => `# --- ${f.name} ---\n\n${f.content}`)
     .join("\n\n---\n\n");
 
-  return NextResponse.json({
+  return jsonSuccess({
     projectName: projectName ?? path.basename(projectPath),
     context,
     files: files.map((f) => f.name),
   });
-}
+});

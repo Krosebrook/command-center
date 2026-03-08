@@ -1,20 +1,52 @@
 "use client";
 
-import { useState } from "react";
-import { ContextPreview } from "@/components/ContextPreview";
-import { PROJECTS, FOLDERS } from "@/lib/config";
-import path from "path";
+import { useState, Suspense } from "react";
+import dynamic from "next/dynamic";
+import { basename } from "@/lib/utils";
 
-// Derive presets from the canonical PROJECTS config plus this application itself
+const ContextPreview = dynamic(
+  () => import("@/components/ContextPreview").then((m) => ({ default: m.ContextPreview })),
+  {
+    ssr: false,
+    loading: () => <div className="hud-card p-5 animate-pulse h-40" />,
+  },
+);
+
+// Presets defined as plain strings — no Node.js path module in client components
 const PRESETS = [
-  ...PROJECTS.map((p) => ({
-    name: p.name,
-    path: p.path,
-    description: p.description,
-  })),
+  {
+    name: "FlashFusion",
+    path: "D:\\01_Homebase\\01_Source-of-Truth\\FlashFusion",
+    description: "Multi-provider AI integration and e-commerce platform",
+  },
+  {
+    name: "KAR",
+    path: "D:\\01_Homebase\\01_Source-of-Truth\\KAR",
+    description: "KAR project",
+  },
+  {
+    name: "INTINC",
+    path: "D:\\03_INTInc\\INTINC",
+    description: "INT Inc / Interact business platform",
+  },
+  {
+    name: "AIaaS Rollout",
+    path: "D:\\01_Homebase\\01_Source-of-Truth\\AIaaSRollOutAutomations",
+    description: "AI-as-a-Service rollout automations",
+  },
+  {
+    name: "nexus-app-factory",
+    path: "D:\\01_Homebase\\00_Core\\nexus-app-factory",
+    description: "Nexus app factory for scaffolding projects",
+  },
+  {
+    name: "Fullstack Framework",
+    path: "D:\\01_Homebase\\02_Frameworks\\fullstack-framework-2025",
+    description: "Reusable full-stack project scaffold",
+  },
   {
     name: "Command Center",
-    path: path.join(FOLDERS.homebase, "03_Projects", "Projects", "Active", "command-center"),
+    path: "D:\\01_Homebase\\03_Projects\\Projects\\Active\\command-center",
     description: "This dashboard application",
   },
 ];
@@ -55,9 +87,10 @@ export default function LaunchPage() {
   };
 
   return (
+    <Suspense fallback={<div className="max-w-6xl hud-card p-5 animate-pulse h-96" />}>
     <div className="max-w-6xl space-y-8">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight">
+        <h1 className="text-xl sm:text-2xl font-bold tracking-tight text-glow">
           AI Workspace Launcher
         </h1>
         <p className="text-muted-foreground mt-1">
@@ -67,8 +100,10 @@ export default function LaunchPage() {
 
       {/* Presets */}
       <div>
-        <h2 className="text-lg font-semibold mb-4">Project Presets</h2>
-        <div className="grid grid-cols-3 gap-3">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-4">
+          Project Presets
+        </h2>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 stagger-children">
           {PRESETS.map((preset) => (
             <button
               key={preset.name}
@@ -76,10 +111,10 @@ export default function LaunchPage() {
                 setSelected(preset.name);
                 loadContext(preset.path, preset.name);
               }}
-              className={`rounded-xl border p-4 text-left transition-colors ${
+              className={`hud-card p-4 text-left transition-colors ${
                 selected === preset.name
                   ? "border-primary bg-primary/5"
-                  : "border-border bg-card hover:border-primary/30"
+                  : "hover:border-primary/30"
               }`}
             >
               <h3 className="font-semibold text-sm">{preset.name}</h3>
@@ -95,20 +130,23 @@ export default function LaunchPage() {
       </div>
 
       {/* Custom Path */}
-      <div className="rounded-xl border border-border bg-card p-5">
-        <h2 className="font-semibold mb-3">Custom Project Path</h2>
+      <div className="hud-card p-5">
+        <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground mb-3">
+          Custom Project Path
+        </h2>
         <div className="flex gap-3">
           <input
             type="text"
             value={customPath}
             onChange={(e) => setCustomPath(e.target.value)}
             placeholder="D:\path\to\project"
-            className="flex-1 px-3 py-2 rounded-lg bg-background border border-border text-sm font-mono focus:outline-none focus:border-primary"
+            aria-label="Custom project path"
+            className="flex-1 px-3 py-2 rounded-lg font-mono bg-background/50 border border-border text-sm focus:outline-none focus:border-primary focus:shadow-glow"
           />
           <button
             onClick={() => {
               if (customPath) {
-                const name = customPath.split("\\").pop() ?? "Custom";
+                const name = basename(customPath);
                 setSelected(name);
                 loadContext(customPath, name);
               }
@@ -122,14 +160,15 @@ export default function LaunchPage() {
 
       {/* Error */}
       {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
+        <div className="hud-card border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
           {error}
         </div>
       )}
 
       {/* Loading */}
       {loading && (
-        <div className="rounded-xl border border-border bg-card p-8 text-center">
+        <div className="hud-card p-8 text-center">
+          <div className="shimmer h-4 w-64 mx-auto rounded mb-2" />
           <p className="text-muted-foreground">
             Scanning project and collecting context files...
           </p>
@@ -145,5 +184,6 @@ export default function LaunchPage() {
         />
       )}
     </div>
+    </Suspense>
   );
 }

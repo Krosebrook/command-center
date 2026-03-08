@@ -1,9 +1,9 @@
-import { NextResponse } from "next/server";
 import { scanDrive } from "@/lib/scanner";
 import { readFileContent, parseTodoItems } from "@/lib/parser";
 import { KEY_FILES } from "@/lib/config";
+import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const [driveStats, todoContent] = await Promise.all([
     scanDrive(),
     readFileContent(KEY_FILES.todo),
@@ -11,7 +11,7 @@ export async function GET() {
 
   const todos = parseTodoItems(todoContent);
 
-  return NextResponse.json({
+  return jsonSuccess({
     drive: {
       folderCount: driveStats.folders.length,
       totalFiles: driveStats.totalFiles,
@@ -31,4 +31,4 @@ export async function GET() {
       hasIndex: f.hasIndex,
     })),
   });
-}
+});

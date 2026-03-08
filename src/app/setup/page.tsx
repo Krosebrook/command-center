@@ -2,15 +2,37 @@
 
 import { useState, useEffect, Suspense } from "react";
 import { useSearchParams, useRouter } from "next/navigation";
-import { SetupStepper } from "@/components/SetupStepper";
-import { ScanResults } from "@/components/ScanResults";
-import { SuggestionCard } from "@/components/SuggestionCard";
+import dynamic from "next/dynamic";
 import type {
   ScanResult,
   DeepScanResult,
   Suggestion,
   SuggestionStatus,
 } from "@/lib/types";
+
+const SetupStepper = dynamic(
+  () => import("@/components/SetupStepper").then((m) => ({ default: m.SetupStepper })),
+  {
+    ssr: false,
+    loading: () => <div className="hud-card p-5 animate-pulse h-16" />,
+  },
+);
+
+const ScanResults = dynamic(
+  () => import("@/components/ScanResults").then((m) => ({ default: m.ScanResults })),
+  {
+    ssr: false,
+    loading: () => <div className="hud-card p-5 animate-pulse h-40" />,
+  },
+);
+
+const SuggestionCard = dynamic(
+  () => import("@/components/SuggestionCard").then((m) => ({ default: m.SuggestionCard })),
+  {
+    ssr: false,
+    loading: () => <div className="hud-card p-5 animate-pulse h-24" />,
+  },
+);
 
 const steps = [
   { label: "Scan", description: "Deep scan drive for issues" },
@@ -159,214 +181,217 @@ function SetupPageContent() {
   };
 
   return (
-    <div className="max-w-6xl space-y-8">
-      {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold tracking-tight">
-          Drive Walkthrough
-        </h1>
-        <p className="text-muted-foreground mt-1">
-          Scan, review, and organize your drive
-        </p>
-      </div>
-
-      {/* Error banner */}
-      {error && (
-        <div className="rounded-xl border border-red-500/20 bg-red-500/5 p-4 text-sm text-red-400">
-          {error}
+    <Suspense fallback={<div className="max-w-6xl hud-card p-5 animate-pulse h-96" />}>
+      <div className="max-w-6xl space-y-8">
+        {/* Header */}
+        <div>
+          <h1 className="text-xl sm:text-2xl font-bold tracking-tight">
+            Drive Walkthrough
+          </h1>
+          <p className="text-muted-foreground mt-1">
+            Scan, review, and organize your drive
+          </p>
         </div>
-      )}
 
-      {/* Stepper */}
-      <SetupStepper currentStep={step} steps={steps} />
-
-      {/* Step 0: Scan */}
-      {step === 0 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-semibold mb-3">Deep Drive Scan</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Recursively scan all numbered folders for missing indexes,
-              unsorted files, stale projects, and more.
-            </p>
-            <button
-              onClick={runScan}
-              disabled={scanning}
-              className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 transition-colors disabled:opacity-50"
-            >
-              {scanning
-                ? "Scanning..."
-                : scanResult
-                  ? "Re-scan Drive"
-                  : "Scan Drive"}
-            </button>
+        {/* Error banner */}
+        {error && (
+          <div role="alert" className="hud-card border-red-500/30 p-4 text-sm text-red-400">
+            {error}
           </div>
-          <ScanResults results={scanResult} loading={scanning} />
-          {scanResult && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => updateStep(1)}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-              >
-                Review Suggestions &rarr;
-              </button>
-            </div>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Step 1: Review suggestions */}
-      {step === 1 && (
-        <div className="space-y-6">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold">
-              AI Suggestions ({suggestions.length})
-            </h2>
-            <div className="flex gap-2">
+        {/* Stepper */}
+        <SetupStepper currentStep={step} steps={steps} />
+
+        {/* Step 0: Scan */}
+        {step === 0 && (
+          <div className="space-y-6">
+            <div className="hud-card p-5">
+              <h2 className="font-semibold mb-3">Deep Drive Scan</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Recursively scan all numbered folders for missing indexes,
+                unsorted files, stale projects, and more.
+              </p>
               <button
-                onClick={() => updateStep(0)}
-                className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
+                onClick={runScan}
+                disabled={scanning}
+                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:bg-primary/90 hover:shadow-glow transition-all disabled:opacity-50"
               >
-                &larr; Back
-              </button>
-              <button
-                onClick={() => updateStep(2)}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-              >
-                Execute Accepted &rarr;
+                {scanning
+                  ? "Scanning..."
+                  : scanResult
+                    ? "Re-scan Drive"
+                    : "Scan Drive"}
               </button>
             </div>
+            <ScanResults results={scanResult} loading={scanning} />
+            {scanResult && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => updateStep(1)}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:shadow-glow transition-all"
+                >
+                  Review Suggestions &rarr;
+                </button>
+              </div>
+            )}
           </div>
-          {suggestions.length === 0 ? (
-            <div className="rounded-xl border border-border bg-card p-8 text-center text-muted-foreground">
-              No suggestions generated
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {suggestions.map((s) => (
-                <SuggestionCard
-                  key={s.id}
-                  suggestion={s}
-                  status={suggestionStatus[s.id] || "pending"}
-                  onAccept={acceptSuggestion}
-                  onDismiss={dismissSuggestion}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
+        )}
 
-      {/* Step 2: Execute */}
-      {step === 2 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-semibold mb-3">Execute Changes</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              {
-                Object.values(suggestionStatus).filter(
-                  (s) => s === "accepted"
-                ).length
-              }{" "}
-              suggestions accepted,{" "}
-              {
-                Object.values(suggestionStatus).filter(
-                  (s) => s === "dismissed"
-                ).length
-              }{" "}
-              dismissed.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => updateStep(1)}
-                className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
-              >
-                &larr; Back to Review
-              </button>
-              <button
-                onClick={executeAccepted}
-                disabled={
-                  executing ||
+        {/* Step 1: Review suggestions */}
+        {step === 1 && (
+          <div className="space-y-6">
+            <div className="flex items-center justify-between">
+              <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground">
+                AI Suggestions ({suggestions.length})
+              </h2>
+              <div className="flex gap-2">
+                <button
+                  onClick={() => updateStep(0)}
+                  className="px-3 py-1.5 rounded-lg font-mono text-xs uppercase tracking-wide text-muted-foreground hover:bg-accent"
+                >
+                  &larr; Back
+                </button>
+                <button
+                  onClick={() => updateStep(2)}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:shadow-glow transition-all"
+                >
+                  Execute Accepted &rarr;
+                </button>
+              </div>
+            </div>
+            {suggestions.length === 0 ? (
+              <div className="hud-card p-8 text-center">
+                <p className="text-sm text-muted-foreground">No suggestions generated.</p>
+                <p className="text-xs text-muted-foreground/60 mt-1">Run a scan first to discover actionable items.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {suggestions.map((s) => (
+                  <SuggestionCard
+                    key={s.id}
+                    suggestion={s}
+                    status={suggestionStatus[s.id] || "pending"}
+                    onAccept={acceptSuggestion}
+                    onDismiss={dismissSuggestion}
+                  />
+                ))}
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 2: Execute */}
+        {step === 2 && (
+          <div className="space-y-6">
+            <div className="hud-card p-5">
+              <h2 className="font-semibold mb-3">Execute Changes</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                {
                   Object.values(suggestionStatus).filter(
                     (s) => s === "accepted"
-                  ).length === 0
-                }
-                className="px-4 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 transition-colors disabled:opacity-50"
-              >
-                {executing ? "Executing..." : "Execute All Accepted"}
-              </button>
-            </div>
-          </div>
-          {/* Show suggestion cards with their execution status */}
-          <div className="space-y-3">
-            {suggestions
-              .filter(
-                (s) =>
-                  suggestionStatus[s.id] === "accepted" ||
-                  suggestionStatus[s.id] === "executing" ||
-                  suggestionStatus[s.id] === "done" ||
-                  suggestionStatus[s.id] === "error"
-              )
-              .map((s) => (
-                <SuggestionCard
-                  key={s.id}
-                  suggestion={s}
-                  status={suggestionStatus[s.id]}
-                  onAccept={() => {}}
-                  onDismiss={() => {}}
-                />
-              ))}
-          </div>
-          {Object.values(suggestionStatus).some((s) => s === "done") && (
-            <div className="flex justify-end">
-              <button
-                onClick={() => updateStep(3)}
-                className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium"
-              >
-                Update Docs &rarr;
-              </button>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* Step 3: Update governance */}
-      {step === 3 && (
-        <div className="space-y-6">
-          <div className="rounded-xl border border-border bg-card p-5">
-            <h2 className="font-semibold mb-3">Update Governance Docs</h2>
-            <p className="text-sm text-muted-foreground mb-4">
-              Update TODO.md and CHANGELOG.md to reflect the changes made.
-            </p>
-            <div className="flex gap-3">
-              <button
-                onClick={() => updateStep(2)}
-                className="px-3 py-1.5 rounded-lg text-sm text-muted-foreground hover:bg-accent"
-              >
-                &larr; Back
-              </button>
-              <button
-                onClick={updateDocs}
-                disabled={updating}
-                className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 transition-colors disabled:opacity-50"
-              >
-                {updating ? "Updating..." : "Update Docs"}
-              </button>
-            </div>
-          </div>
-          {updateResult && (
-            <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
-              <h3 className="font-semibold text-emerald-400 mb-2">
-                Docs Updated
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                Updated: {updateResult.updated.join(", ")}
+                  ).length
+                }{" "}
+                suggestions accepted,{" "}
+                {
+                  Object.values(suggestionStatus).filter(
+                    (s) => s === "dismissed"
+                  ).length
+                }{" "}
+                dismissed.
               </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => updateStep(1)}
+                  className="px-3 py-1.5 rounded-lg font-mono text-xs uppercase tracking-wide text-muted-foreground hover:bg-accent"
+                >
+                  &larr; Back to Review
+                </button>
+                <button
+                  onClick={executeAccepted}
+                  disabled={
+                    executing ||
+                    Object.values(suggestionStatus).filter(
+                      (s) => s === "accepted"
+                    ).length === 0
+                  }
+                  className="px-4 py-2 rounded-lg bg-amber-500 text-black text-sm font-medium hover:bg-amber-400 hover:shadow-glow transition-all disabled:opacity-50"
+                >
+                  {executing ? "Executing..." : "Execute All Accepted"}
+                </button>
+              </div>
             </div>
-          )}
-        </div>
-      )}
-    </div>
+            {/* Show suggestion cards with their execution status */}
+            <div className="space-y-3">
+              {suggestions
+                .filter(
+                  (s) =>
+                    suggestionStatus[s.id] === "accepted" ||
+                    suggestionStatus[s.id] === "executing" ||
+                    suggestionStatus[s.id] === "done" ||
+                    suggestionStatus[s.id] === "error"
+                )
+                .map((s) => (
+                  <SuggestionCard
+                    key={s.id}
+                    suggestion={s}
+                    status={suggestionStatus[s.id]}
+                    onAccept={() => {}}
+                    onDismiss={() => {}}
+                  />
+                ))}
+            </div>
+            {Object.values(suggestionStatus).some((s) => s === "done") && (
+              <div className="flex justify-end">
+                <button
+                  onClick={() => updateStep(3)}
+                  className="px-4 py-2 rounded-lg bg-primary text-primary-foreground text-sm font-medium hover:shadow-glow transition-all"
+                >
+                  Update Docs &rarr;
+                </button>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* Step 3: Update governance */}
+        {step === 3 && (
+          <div className="space-y-6">
+            <div className="hud-card p-5">
+              <h2 className="font-semibold mb-3">Update Governance Docs</h2>
+              <p className="text-sm text-muted-foreground mb-4">
+                Update TODO.md and CHANGELOG.md to reflect the changes made.
+              </p>
+              <div className="flex gap-3">
+                <button
+                  onClick={() => updateStep(2)}
+                  className="px-3 py-1.5 rounded-lg font-mono text-xs uppercase tracking-wide text-muted-foreground hover:bg-accent"
+                >
+                  &larr; Back
+                </button>
+                <button
+                  onClick={updateDocs}
+                  disabled={updating}
+                  className="px-4 py-2 rounded-lg bg-emerald-600 text-white text-sm font-medium hover:bg-emerald-500 hover:shadow-glow transition-all disabled:opacity-50"
+                >
+                  {updating ? "Updating..." : "Update Docs"}
+                </button>
+              </div>
+            </div>
+            {updateResult && (
+              <div className="rounded-xl border border-emerald-500/20 bg-emerald-500/5 p-5">
+                <h3 className="font-semibold text-emerald-400 mb-2">
+                  Docs Updated
+                </h3>
+                <p className="text-sm text-muted-foreground">
+                  Updated: {updateResult.updated.join(", ")}
+                </p>
+              </div>
+            )}
+          </div>
+        )}
+      </div>
+    </Suspense>
   );
 }
 

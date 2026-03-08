@@ -6,11 +6,25 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatBytes(bytes: number): string {
+  if (!Number.isFinite(bytes) || bytes < 0) return "0 B";
   if (bytes === 0) return "0 B";
   const k = 1024;
-  const sizes = ["B", "KB", "MB", "GB", "TB"];
-  const i = Math.min(Math.floor(Math.log(bytes) / Math.log(k)), sizes.length - 1);
+  const sizes = ["B", "KB", "MB", "GB", "TB", "PB"];
+  const i = Math.min(
+    Math.floor(Math.log(bytes) / Math.log(k)),
+    sizes.length - 1,
+  );
   return `${parseFloat((bytes / Math.pow(k, i)).toFixed(1))} ${sizes[i]}`;
+}
+
+/**
+ * Extract the last segment from a path string.
+ * Works on both Windows (backslash) and Unix (forward slash) paths.
+ * Safe for client-side use (no Node.js path module).
+ */
+export function basename(filePath: string): string {
+  const segments = filePath.replace(/\\/g, "/").split("/").filter(Boolean);
+  return segments[segments.length - 1] ?? filePath;
 }
 
 export function formatDate(date: Date | string): string {

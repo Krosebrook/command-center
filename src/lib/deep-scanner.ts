@@ -8,6 +8,7 @@ import {
   GOVERNANCE_FILES,
 } from "./config";
 import { fileExists } from "./scanner";
+import { logger } from "./logger";
 import type {
   ScanIssueType,
   Severity,
@@ -321,60 +322,72 @@ export async function deepScanDrive(): Promise<DeepScanResult> {
     return cachedResult;
   }
 
-  const [
-    missingIndex,
-    orphaned,
-    stale,
-    unsorted,
-    largeFiles,
-    emptyDirs,
-    missingGovernance,
-  ] = await Promise.all([
-    checkMissingIndex(),
-    checkOrphanedRootItems(),
-    checkStaleProjects(),
-    checkUnsortedItems(),
-    checkLargeFiles(),
-    checkEmptyDirectories(),
-    checkMissingGovernance(),
-  ]);
+  try {
+    const settled = await Promise.allSettled([
+      checkMissingIndex(),
+      checkOrphanedRootItems(),
+      checkStaleProjects(),
+      checkUnsortedItems(),
+      checkLargeFiles(),
+      checkEmptyDirectories(),
+      checkMissingGovernance(),
+    ]);
 
-  const results: ScanResult[] = [
-    ...missingIndex,
-    ...orphaned,
-    ...stale,
-    ...unsorted,
-    ...largeFiles,
-    ...emptyDirs,
-    ...missingGovernance,
-  ];
+    const results: ScanResult[] = [];
+    for (const result of settled) {
+      if (result.status === "fulfilled") {
+        results.push(...result.value);
+      } else {
+        logger.warn("Deep scan check failed", { error: String(result.reason) });
+      }
+    }
 
-  const bySeverity = { info: 0, warning: 0, action: 0 };
-  const byType: Record<ScanIssueType, number> = {
-    "missing-index": 0,
-    orphaned: 0,
-    stale: 0,
-    unsorted: 0,
-    "large-file": 0,
-    "empty-dir": 0,
-    "missing-governance": 0,
-  };
+    const bySeverity = { info: 0, warning: 0, action: 0 };
+    const byType: Record<ScanIssueType, number> = {
+      "missing-index": 0,
+      orphaned: 0,
+      stale: 0,
+      unsorted: 0,
+      "large-file": 0,
+      "empty-dir": 0,
+      "missing-governance": 0,
+    };
 
-  for (const r of results) {
-    bySeverity[r.severity]++;
-    byType[r.type]++;
+    for (const r of results) {
+      bySeverity[r.severity]++;
+      byType[r.type]++;
+    }
+
+    cachedResult = {
+      results,
+      scannedAt: new Date().toISOString(),
+      totalIssues: results.length,
+      bySeverity,
+      byType,
+    };
+    cacheTime = now;
+
+    return cachedResult;
+  } catch (error) {
+    logger.error("Deep scan failed", {
+      error: error instanceof Error ? error.message : String(error),
+    });
+    return {
+      results: [],
+      scannedAt: new Date().toISOString(),
+      totalIssues: 0,
+      bySeverity: { info: 0, warning: 0, action: 0 },
+      byType: {
+        "missing-index": 0,
+        orphaned: 0,
+        stale: 0,
+        unsorted: 0,
+        "large-file": 0,
+        "empty-dir": 0,
+        "missing-governance": 0,
+      },
+    };
   }
-
-  cachedResult = {
-    results,
-    scannedAt: new Date().toISOString(),
-    totalIssues: results.length,
-    bySeverity,
-    byType,
-  };
-  cacheTime = now;
-
-  return cachedResult;
 }
 
 /** Invalidate the deep scanner cache so the next call performs a fresh scan. */

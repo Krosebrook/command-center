@@ -1,7 +1,7 @@
-import { NextResponse } from "next/server";
 import { scanDrive } from "@/lib/scanner";
+import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
 
-export async function GET() {
+export const GET = withErrorHandling(async () => {
   const stats = await scanDrive();
-  return NextResponse.json(stats);
-}
+  return jsonSuccess(stats);
+});

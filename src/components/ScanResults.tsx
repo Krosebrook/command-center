@@ -50,7 +50,7 @@ export function ScanResults({ results, loading }: ScanResultsProps) {
 
   if (loading) {
     return (
-      <div className="rounded-xl border border-border bg-card p-5 animate-pulse">
+      <div role="status" className="rounded-xl border border-border bg-card p-5 animate-pulse">
         <div className="flex items-center gap-3">
           <span className="relative flex h-3 w-3">
             <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-75" />
@@ -81,12 +81,13 @@ export function ScanResults({ results, loading }: ScanResultsProps) {
   return (
     <div className="space-y-6">
       {/* Summary bar */}
-      <div className="grid grid-cols-3 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {(["info", "warning", "action"] as Severity[]).map((sev) => {
           const s = SEVERITY_STYLES[sev];
           return (
             <div
               key={sev}
+              aria-label={`${SEVERITY_STYLES[sev].label}: ${results.bySeverity[sev]} issues`}
               className={cn("rounded-xl border bg-card p-5", {
                 "border-blue-500/20": sev === "info",
                 "border-amber-500/20": sev === "warning",
@@ -125,7 +126,9 @@ export function ScanResults({ results, loading }: ScanResultsProps) {
               {/* Group header */}
               <button
                 onClick={() => toggle(type)}
-                className="flex w-full items-center justify-between p-4 text-left hover:bg-accent/50 transition-colors"
+                aria-expanded={isOpen}
+                aria-controls={`scan-group-${type}`}
+                className="flex w-full items-center justify-between p-4 text-left hover:bg-accent/50 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-primary/50"
               >
                 <div className="flex items-center gap-3">
                   <svg
@@ -153,7 +156,7 @@ export function ScanResults({ results, loading }: ScanResultsProps) {
 
               {/* Issue rows */}
               {isOpen && (
-                <div className="border-t border-border divide-y divide-border">
+                <div id={`scan-group-${type}`} className="border-t border-border divide-y divide-border">
                   {items.map((item, i) => {
                     const sev = SEVERITY_STYLES[item.severity];
                     return (

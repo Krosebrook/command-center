@@ -34,7 +34,7 @@ export interface DeepScanResult {
 
 // -- Suggestion types -------------------------------------------------------
 
-export type SuggestionAction = "move" | "create-index" | "archive" | "delete";
+export type SuggestionAction = "move" | "create-index" | "create-file" | "archive" | "delete";
 export type Confidence = "high" | "medium" | "low";
 
 export interface Suggestion {
