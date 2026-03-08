@@ -3,6 +3,7 @@ import { scanDrive } from "@/lib/scanner";
 import { PROJECTS, FOLDERS } from "@/lib/config";
 import { ProjectCard } from "@/components/ProjectCard";
 import { DriveHealthBar } from "@/components/DriveHealthBar";
+import { SemanticSearch } from "@/components/SemanticSearch";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import path from "path";
 
@@ -38,6 +39,9 @@ export default async function DashboardPage() {
           D:\ drive is not accessible. Check that it is mounted and try refreshing.
         </div>
       )}
+
+      {/* Semantic Local Search */}
+      <SemanticSearch />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
