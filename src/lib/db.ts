@@ -48,6 +48,15 @@ export function getDb() {
         embedding TEXT NOT NULL,
         metadata TEXT
       );
+
+      CREATE TABLE IF NOT EXISTS automation_jobs (
+        id TEXT PRIMARY KEY,
+        script_path TEXT NOT NULL,
+        status TEXT NOT NULL,   -- 'pending', 'running', 'completed', 'failed'
+        output TEXT,
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
     `);
 
     logger.info("Initialized local SQLite metrics database");
@@ -87,4 +96,46 @@ export function getScanHistory(days: number = 30) {
   } catch (err) {
     return [];
   }
+}
+
+// --- Automation Job Queue Functions ---
+
+export function createJob(id: string, scriptPath: string) {
+  const db = getDb();
+  if (!db) return;
+  const now = new Date().toISOString();
+  db.prepare(`
+    INSERT INTO automation_jobs (id, script_path, status, output, created_at, updated_at)
+    VALUES (?, ?, 'pending', '', ?, ?)
+  `).run(id, scriptPath, now, now);
+}
+
+export function updateJobStatus(id: string, status: 'running' | 'completed' | 'failed', outputAppend?: string) {
+  const db = getDb();
+  if (!db) return;
+  const now = new Date().toISOString();
+  
+  if (outputAppend !== undefined) {
+    // Append to existing output
+    const job = getJob(id);
+    const newOutput = (job?.output || '') + outputAppend;
+    db.prepare(`UPDATE automation_jobs SET status = ?, output = ?, updated_at = ? WHERE id = ?`)
+      .run(status, newOutput, now, id);
+  } else {
+    db.prepare(`UPDATE automation_jobs SET status = ?, updated_at = ? WHERE id = ?`)
+      .run(status, now, id);
+  }
+}
+
+export function getJob(id: string) {
+  const db = getDb();
+  if (!db) return null;
+  return db.prepare(`SELECT * FROM automation_jobs WHERE id = ?`).get(id) as {
+    id: string;
+    script_path: string;
+    status: string;
+    output: string;
+    created_at: string;
+    updated_at: string;
+  } | undefined;
 }

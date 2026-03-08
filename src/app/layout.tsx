@@ -1,6 +1,11 @@
+
 import type { Metadata } from "next";
 import { NavSidebar } from "@/components/NavSidebar";
 import "./globals.css";
+import { ThemeProvider } from "@/components/ThemeProvider";
+import { Sidebar } from "@/components/Sidebar";
+import { ChatSidebar } from "@/components/ChatSidebar";
+import { Toaster } from "@/components/ui/toaster";
 
 export const metadata: Metadata = {
   title: "Command Center | D:\\ Drive",
@@ -18,21 +23,27 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className="min-h-screen flex bg-background text-foreground antialiased">
-        {/* Skip to content link for keyboard/screen reader users */}
-        <a
-          href="#main-content"
-          className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[200] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg"
-        >
-          Skip to main content
-        </a>
-        <NavSidebar />
-        <main
-          id="main-content"
-          className="flex-1 lg:ml-60 p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8 overflow-auto"
-          tabIndex={-1}
-        >
-          {children}
-        </main>
+        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+          {/* Skip to content link for keyboard/screen reader users */}
+          <a
+            href="#main-content"
+            className="sr-only focus:not-sr-only focus:fixed focus:top-4 focus:left-1/2 focus:-translate-x-1/2 focus:z-[200] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-2 focus:text-primary-foreground focus:text-sm focus:font-medium focus:shadow-lg"
+          >
+            Skip to main content
+          </a>
+          <div className="flex min-h-screen">
+            <Sidebar />
+            <main
+              id="main-content"
+              className="flex-1 w-full bg-background overflow-hidden p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8"
+              tabIndex={-1}
+            >
+              {children}
+            </main>
+          </div>
+          <ChatSidebar />
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );

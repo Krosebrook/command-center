@@ -1,12 +1,11 @@
 import { exec } from "child_process";
-import { promisify } from "util";
 import path from "path";
 import fs from "fs/promises";
+import crypto from "crypto";
 import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
 import { assertUnderDriveRoot } from "@/lib/security";
 import { logger } from "@/lib/logger";
-
-const execAsync = promisify(exec);
+import { createJob, updateJobStatus } from "@/lib/db";
 
 export const POST = withErrorHandling(async (request: Request) => {
   const start = Date.now();
@@ -50,19 +49,38 @@ export const POST = withErrorHandling(async (request: Request) => {
     else throw new Error(`Unsupported script type: ${ext}`);
   }
 
-  logger.info(`Executing workflow: ${command} in ${cwd}`);
+  logger.info(\`Queuing workflow: \${command} in \${cwd}\`);
 
-  try {
-    const { stdout, stderr } = await execAsync(command, { cwd });
-    return jsonSuccess({ stdout, stderr, command }, "Execution complete", 200, start);
-  } catch (error: any) {
-    // child_process.exec throws an error object that contains stdout/stderr if the process exits with non-zero
-    return jsonSuccess({ 
-      stdout: error.stdout || "", 
-      stderr: error.stderr || error.message,
-      command,
-      failed: true
-    }, "Execution failed", 200, start); 
-    // We return 200 so the frontend can still parse the JSON output of the user's failed script
-  }
+  // Generate a unique Job ID
+  const jobId = crypto.randomUUID();
+  createJob(jobId, targetPath);
+
+  // Kick off the script asynchronously. Do not \`await\` it.
+  const child = exec(command, { cwd });
+  updateJobStatus(jobId, 'running');
+
+  child.stdout?.on('data', (data) => {
+    updateJobStatus(jobId, 'running', data.toString());
+  });
+
+  child.stderr?.on('data', (data) => {
+    updateJobStatus(jobId, 'running', data.toString());
+  });
+
+  child.on('close', (code) => {
+    const finalStatus = code === 0 ? 'completed' : 'failed';
+    updateJobStatus(jobId, finalStatus, \`\n[Process exited with code \${code}]\`);
+    logger.info(\`Job \${jobId} finished with code \${code}\`);
+  });
+
+  child.on('error', (err) => {
+    updateJobStatus(jobId, 'failed', \`\n[Execution Error: \${err.message}]\`);
+    logger.error(\`Job \${jobId} failed to start\`, { error: err.message });
+  });
+
+  // Return immediately to the client with the tracking ID
+  return jsonSuccess({ 
+    jobId, 
+    message: "Workflow queued successfully" 
+  }, "Execution started", 202, start);
 });

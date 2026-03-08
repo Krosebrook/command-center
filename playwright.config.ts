@@ -5,8 +5,8 @@ export default defineConfig({
   fullyParallel: true,
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 2 : 0,
-  workers: process.env.CI ? 1 : undefined,
-  reporter: "html",
+  workers: 2,
+  reporter: "list",
   use: {
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
@@ -21,15 +21,12 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
     },
     {
+      name: "firefox",
+      use: { ...devices["Desktop Firefox"] },
+    },
+    {
       name: "mobile-chrome",
       use: { ...devices["Pixel 5"] },
     },
   ],
-  // webServer disabled — tests run against the already-running dev server on :3000
-  // webServer: {
-  //   command: "npm run dev",
-  //   url: "http://localhost:3000",
-  //   reuseExistingServer: true,
-  //   timeout: 180_000,
-  // },
 });
