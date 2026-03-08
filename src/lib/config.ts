@@ -1,6 +1,8 @@
 import path from "path";
 
-export const DRIVE_ROOT = "D:\\";
+export const DRIVES: string[] = ["D:\\"];
+// Fallback for primary drive config maps
+export const DRIVE_ROOT = DRIVES[0];
 
 export const FOLDERS = {
   core: path.join(DRIVE_ROOT, "00_Core"),

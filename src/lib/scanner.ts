@@ -2,6 +2,7 @@ import fs from "fs/promises";
 import path from "path";
 import { DRIVE_ROOT } from "./config";
 import { logger } from "./logger";
+import { logScanMetrics } from "./db";
 
 export interface FolderInfo {
   name: string;
@@ -100,6 +101,9 @@ export async function scanDrive(): Promise<DriveStats> {
 
     const totalFiles = folders.reduce((sum, f) => sum + f.fileCount, 0);
     const totalSize = folders.reduce((sum, f) => sum + f.totalSize, 0);
+
+    // Track metrics historically
+    logScanMetrics(totalSize, totalFiles, folders.length);
 
     cachedStats = { folders, totalFiles, totalSize, lastScan: new Date(), partialFailures };
     cacheTime = now;

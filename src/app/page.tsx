@@ -4,6 +4,7 @@ import { PROJECTS, FOLDERS } from "@/lib/config";
 import { ProjectCard } from "@/components/ProjectCard";
 import { DriveHealthBar } from "@/components/DriveHealthBar";
 import { SemanticSearch } from "@/components/SemanticSearch";
+import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import { getGitStatus } from "@/lib/git-utils";
 import path from "path";
@@ -45,6 +46,9 @@ export default async function DashboardPage() {
 
       {/* Semantic Local Search */}
       <SemanticSearch />
+      
+      {/* Analytics */}
+      <AnalyticsCharts />
 
       {/* Stats row */}
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 stagger-children">
