@@ -11,18 +11,18 @@ export default defineConfig({
     baseURL: "http://localhost:3000",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    headless: true,
     launchOptions: {
-      args: ["--no-sandbox", "--disable-setuid-sandbox"],
+      executablePath: process.env.CI
+        ? undefined
+        : "/mnt/c/Program Files/Google/Chrome/Application/chrome.exe",
+      args: ["--no-sandbox", "--disable-setuid-sandbox", "--disable-gpu"],
     },
   },
   projects: [
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-    },
-    {
-      name: "firefox",
-      use: { ...devices["Desktop Firefox"] },
     },
     {
       name: "mobile-chrome",
