@@ -121,13 +121,23 @@ export function NavSidebar() {
       </nav>
 
       {/* Footer */}
-      <div className="p-4 border-t border-border/50">
+      <div className="p-4 border-t border-border/50 flex flex-col gap-3">
         <div className="flex items-center gap-2">
           <div className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" aria-hidden="true" />
           <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
             Live &middot; D:\ Drive
           </p>
         </div>
+        <button 
+          onClick={async () => {
+            await fetch('/api/auth/logout', { method: 'POST' });
+            window.location.href = '/login';
+          }}
+          className="text-[10px] font-mono uppercase text-muted-foreground hover:text-destructive flex items-center gap-2 transition-colors w-fit"
+        >
+          <svg className="w-3 h-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2}><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+          Lock Dashboard
+        </button>
       </div>
     </>
   );

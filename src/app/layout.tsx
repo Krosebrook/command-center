@@ -1,9 +1,7 @@
-
 import type { Metadata } from "next";
 import { NavSidebar } from "@/components/NavSidebar";
 import "./globals.css";
 import { ThemeProvider } from "@/components/ThemeProvider";
-import { Sidebar } from "@/components/Sidebar";
 import { ChatSidebar } from "@/components/ChatSidebar";
 import { Toaster } from "@/components/ui/toaster";
 
@@ -32,7 +30,7 @@ export default function RootLayout({
             Skip to main content
           </a>
           <div className="flex min-h-screen">
-            <Sidebar />
+            <NavSidebar />
             <main
               id="main-content"
               className="flex-1 w-full bg-background overflow-hidden p-4 sm:p-6 lg:p-8 pt-16 lg:pt-8"
