@@ -105,7 +105,7 @@ export async function scanDrive(): Promise<DriveStats> {
     cacheTime = now;
     return cachedStats;
   } catch (error) {
-    logger.error("Failed to scan drive", {
+    logger.warn("Failed to scan drive", {
       driveRoot: DRIVE_ROOT,
       error: error instanceof Error ? error.message : String(error),
     });

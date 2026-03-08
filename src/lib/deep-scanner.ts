@@ -369,7 +369,7 @@ export async function deepScanDrive(): Promise<DeepScanResult> {
 
     return cachedResult;
   } catch (error) {
-    logger.error("Deep scan failed", {
+    logger.warn("Deep scan failed", {
       error: error instanceof Error ? error.message : String(error),
     });
     return {

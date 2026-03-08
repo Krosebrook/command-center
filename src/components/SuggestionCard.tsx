@@ -12,6 +12,10 @@ const ACTION_STYLES: Record<SuggestionAction, { label: string; cls: string }> =
       label: "Create Index",
       cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
     },
+    "create-file": {
+      label: "Create File",
+      cls: "text-emerald-400 bg-emerald-500/10 border-emerald-500/20",
+    },
     archive: {
       label: "Archive",
       cls: "text-amber-400 bg-amber-500/5 border-amber-500/20",

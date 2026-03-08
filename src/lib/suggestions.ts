@@ -19,6 +19,7 @@ const CONFIDENCE_ORDER: Record<Confidence, number> = {
 const ACTION_ORDER: Record<SuggestionAction, number> = {
   move: 0,
   "create-index": 1,
+  "create-file": 1,
   archive: 2,
   delete: 3,
 };
