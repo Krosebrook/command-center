@@ -47,6 +47,17 @@ export function clearProjectVectors(projectName: string): void {
   db.prepare(`DELETE FROM project_embeddings WHERE project_name = ?`).run(projectName);
 }
 
+export function clearFileVectors(filePath: string): void {
+  const db = getDb();
+  if (!db) return;
+  try {
+    // The JSON1 extension allows us to match the exact source file path
+    db.prepare(`DELETE FROM project_embeddings WHERE json_extract(metadata, '$.filePath') = ?`).run(filePath);
+  } catch (error) {
+    logger.error("Failed to clear file vectors", { error });
+  }
+}
+
 export function cosineSimilarity(a: number[], b: number[]): number {
   if (a.length !== b.length) throw new Error('Vectors must be of identical length');
   let dotProduct = 0;

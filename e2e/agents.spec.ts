@@ -1,25 +1,28 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Agents Page", () => {
-  test("loads agents page", async ({ page }) => {
-    const response = await page.goto("/agents");
-    expect(response).not.toBeNull();
-    expect(response!.status()).toBeLessThan(600);
+  let html: string;
+  let statusCode: number;
 
-    if (response!.ok()) {
-      await expect(page.locator("h1")).toBeVisible();
-    } else {
-      const body = await page.textContent("body");
-      expect(body).toBeTruthy();
+  test.beforeAll(async ({ request }) => {
+    const response = await request.get("/agents");
+    statusCode = response.status();
+    html = await response.text();
+  });
+
+  test("loads agents page", async () => {
+    expect([200, 500]).toContain(statusCode);
+    expect(html).toBeTruthy();
+    if (statusCode === 200) {
+      expect(html).toMatch(/<h1[\s>]/i);
     }
   });
 
-  test("shows agent data or empty state", async ({ page }) => {
-    const response = await page.goto("/agents");
-    expect(response).not.toBeNull();
-
+  test("shows agent data or empty state", async () => {
     // Should show data table, empty state message, or server error
-    const body = await page.textContent("body");
-    expect(body).toBeTruthy();
+    expect(html).toBeTruthy();
+    if (statusCode === 200) {
+      expect(html.toLowerCase()).toMatch(/agent|registry|no agents/i);
+    }
   });
 });

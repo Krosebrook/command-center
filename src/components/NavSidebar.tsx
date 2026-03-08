@@ -28,6 +28,16 @@ const icons: Record<string, string> = {
 export function NavSidebar() {
   const pathname = usePathname();
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [watcherStatus, setWatcherStatus] = useState("idle");
+
+  useEffect(() => {
+    fetch("/api/setup/watcher-status")
+      .then(res => res.json())
+      .then(data => {
+        if (data.status) setWatcherStatus(data.status);
+      })
+      .catch((e) => console.error("Watcher init failed", e));
+  }, []);
 
   useEffect(() => {
     setMobileOpen(false);
@@ -123,9 +133,9 @@ export function NavSidebar() {
       {/* Footer */}
       <div className="p-4 border-t border-border/50 flex flex-col gap-3">
         <div className="flex items-center gap-2">
-          <div className="h-1.5 w-1.5 rounded-full bg-emerald-400/60" aria-hidden="true" />
-          <p className="text-[10px] text-muted-foreground font-mono uppercase tracking-wider">
-            Live &middot; D:\ Drive
+          <div className={`h-1.5 w-1.5 rounded-full ${watcherStatus === 'watching' ? 'bg-emerald-400 animate-pulse drop-shadow-[0_0_4px_rgba(52,211,153,0.8)]' : 'bg-muted'} `} aria-hidden="true" />
+          <p className={`text-[10px] font-mono uppercase tracking-wider ${watcherStatus === 'watching' ? 'text-emerald-400/90' : 'text-muted-foreground'}`}>
+            {watcherStatus === 'watching' ? 'Live Sink Active' : 'Live Sync Offline'}
           </p>
         </div>
         <button 

@@ -1,34 +1,28 @@
 import { test, expect } from "@playwright/test";
 
 test.describe("Projects Page", () => {
-  test("loads projects page", async ({ page }) => {
-    const response = await page.goto("/projects");
-    // Page should return a response (may be 200 or 500 if D:\ drive is unavailable)
-    expect(response).not.toBeNull();
-    expect(response!.status()).toBeLessThan(600);
+  let html: string;
+  let statusCode: number;
 
-    // If the page rendered successfully, check for heading
-    if (response!.ok()) {
-      await expect(page.locator("h1")).toBeVisible();
-    } else {
-      // Server error page still loads in the browser
-      const body = await page.textContent("body");
-      expect(body).toBeTruthy();
+  test.beforeAll(async ({ request }) => {
+    const response = await request.get("/projects");
+    statusCode = response.status();
+    html = await response.text();
+  });
+
+  test("loads projects page", async () => {
+    expect([200, 500]).toContain(statusCode);
+    expect(html).toBeTruthy();
+    if (statusCode === 200) {
+      expect(html).toMatch(/<h1[\s>]/i);
     }
   });
 
-  test("displays project cards or empty state", async ({ page }) => {
-    const response = await page.goto("/projects");
-    expect(response).not.toBeNull();
-
-    if (response!.ok()) {
-      // Should show either project cards or an empty state
-      const hasContent = await page.locator(".hud-card").count();
-      expect(hasContent).toBeGreaterThanOrEqual(0);
-    } else {
-      // In degraded state, page still responds
-      const body = await page.textContent("body");
-      expect(body).toBeTruthy();
+  test("displays project cards or empty state", async () => {
+    if (statusCode === 200) {
+      // Should show either project cards or empty state text
+      expect(html.toLowerCase()).toMatch(/project|no projects|empty/i);
     }
+    expect(html).toBeTruthy();
   });
 });
