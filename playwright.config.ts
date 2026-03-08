@@ -22,10 +22,11 @@ export default defineConfig({
       use: { ...devices["Pixel 5"] },
     },
   ],
-  webServer: {
-    command: "npm run dev",
-    url: "http://localhost:3000",
-    reuseExistingServer: true,
-    timeout: 180_000,
-  },
+  // webServer disabled — tests run against the already-running dev server on :3000
+  // webServer: {
+  //   command: "npm run dev",
+  //   url: "http://localhost:3000",
+  //   reuseExistingServer: true,
+  //   timeout: 180_000,
+  // },
 });
