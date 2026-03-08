@@ -1,44 +1,50 @@
-import fs from 'fs/promises';
-import path from 'path';
+import { getDb } from './db';
+import { logger } from './logger';
 
 export interface VectorRecord {
-  id: string; // Project path or identifier
+  id: string; // Project path or chunk identifier
   text: string; // The text that was embedded
   embedding: number[]; // The vector representation
   metadata: {
     title: string;
     description: string;
-    lastModified: string;
+    lastModified?: string;
+    filePath?: string;
   };
 }
 
-export interface VectorStore {
-  records: VectorRecord[];
-  lastIndexed: string | null;
-}
+export function saveVectorsToDb(records: VectorRecord[]): void {
+  const db = getDb();
+  if (!db) return;
 
-const STORE_DIR = path.resolve('D:\\.command-center');
-const STORE_PATH = path.join(STORE_DIR, 'vector-index.json');
-
-export async function getVectorStore(): Promise<VectorStore> {
   try {
-    const data = await fs.readFile(STORE_PATH, 'utf-8');
-    return JSON.parse(data) as VectorStore;
-  } catch (err: any) {
-    if (err.code === 'ENOENT') {
-      return { records: [], lastIndexed: null };
-    }
-    throw err;
+    const insert = db.prepare(`
+      INSERT OR REPLACE INTO project_embeddings (id, project_name, content, embedding, metadata)
+      VALUES (@id, @project_name, @content, @embedding, @metadata)
+    `);
+
+    const insertMany = db.transaction((recordsToInsert: VectorRecord[]) => {
+      for (const record of recordsToInsert) {
+        insert.run({
+          id: record.id,
+          project_name: record.metadata.title,
+          content: record.text,
+          embedding: JSON.stringify(record.embedding),
+          metadata: JSON.stringify(record.metadata),
+        });
+      }
+    });
+
+    insertMany(records);
+  } catch (error) {
+    logger.error("Failed to save vectors to SQLite", { error });
   }
 }
 
-export async function saveVectorStore(store: VectorStore): Promise<void> {
-  try {
-    await fs.mkdir(STORE_DIR, { recursive: true });
-  } catch (err: any) {
-    if (err.code !== 'EEXIST') throw err;
-  }
-  await fs.writeFile(STORE_PATH, JSON.stringify(store, null, 2), 'utf-8');
+export function clearProjectVectors(projectName: string): void {
+  const db = getDb();
+  if (!db) return;
+  db.prepare(`DELETE FROM project_embeddings WHERE project_name = ?`).run(projectName);
 }
 
 export function cosineSimilarity(a: number[], b: number[]): number {
@@ -56,11 +62,23 @@ export function cosineSimilarity(a: number[], b: number[]): number {
 }
 
 export async function searchSimilar(queryEmbedding: number[], topK: number = 5): Promise<Array<VectorRecord & { score: number }>> {
-  const store = await getVectorStore();
-  const scored = store.records.map(record => ({
-    ...record,
-    score: cosineSimilarity(queryEmbedding, record.embedding)
-  }));
+  const db = getDb();
+  if (!db) return [];
+
+  // Note: For millions of vectors, doing this in-memory in Node would be slow.
+  // But for thousands of code chunks, a simple SELECT * followed by JS math is nearly instant.
+  const rows = db.prepare(`SELECT * FROM project_embeddings`).all();
+  
+  const scored = rows.map((row: any) => {
+    const embedding = JSON.parse(row.embedding);
+    return {
+      id: row.id,
+      text: row.content,
+      embedding,
+      metadata: JSON.parse(row.metadata),
+      score: cosineSimilarity(queryEmbedding, embedding)
+    };
+  });
   
   scored.sort((a, b) => b.score - a.score);
   return scored.slice(0, topK);

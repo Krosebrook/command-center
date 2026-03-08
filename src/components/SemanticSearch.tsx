@@ -20,6 +20,7 @@ export function SemanticSearch() {
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
+  const [isDeepIndexing, setIsDeepIndexing] = useState(false);
 
   async function handleSearch(e: React.FormEvent) {
     e.preventDefault();
@@ -51,10 +52,11 @@ export function SemanticSearch() {
     }
   }
 
-  async function handleIndex() {
+  async function handleIndex(deep: boolean = false) {
     setIsIndexing(true);
+    setIsDeepIndexing(deep);
     try {
-      const res = await fetch("/api/setup/index-vectors", { method: "POST" });
+      const res = await fetch(`/api/setup/index-vectors${deep ? '?deep=true' : ''}`, { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Indexing failed");
       
@@ -70,6 +72,7 @@ export function SemanticSearch() {
       });
     } finally {
       setIsIndexing(false);
+      setIsDeepIndexing(false);
     }
   }
 
@@ -79,16 +82,27 @@ export function SemanticSearch() {
         <h2 className="text-xs font-mono uppercase tracking-widest text-muted-foreground flex items-center gap-2">
           <Search className="h-4 w-4" /> Semantic Local Search
         </h2>
-        
-        <button
-          onClick={handleIndex}
-          disabled={isIndexing}
-          className="text-[10px] font-mono uppercase px-2 py-1 rounded bg-accent/50 hover:bg-accent text-accent-foreground disabled:opacity-50 transition-colors flex items-center gap-1"
-          title="Rebuild Vector Index"
-        >
-          {isIndexing ? <Loader2 className="h-3 w-3 animate-spin" /> : <DatabaseZap className="h-3 w-3" />}
-          {isIndexing ? "Indexing..." : "Rebuild Index"}
-        </button>
+        <div className="flex items-center gap-2">
+          <button
+            onClick={() => handleIndex(false)}
+            disabled={isIndexing}
+            className="text-[10px] font-mono uppercase px-2 py-1 rounded bg-accent/50 hover:bg-accent text-accent-foreground disabled:opacity-50 transition-colors flex items-center gap-1"
+            title="Fast rebuild (README only)"
+          >
+            {isIndexing && !isDeepIndexing ? <Loader2 className="h-3 w-3 animate-spin" /> : <DatabaseZap className="h-3 w-3" />}
+            {isIndexing && !isDeepIndexing ? "Indexing..." : "Fast Index"}
+          </button>
+          
+          <button
+            onClick={() => handleIndex(true)}
+            disabled={isIndexing}
+            className="text-[10px] font-mono uppercase px-2 py-1 rounded bg-primary/20 hover:bg-primary/30 text-primary disabled:opacity-50 transition-colors flex items-center gap-1 border border-primary/30"
+            title="Deep rebuild (Parses all code files in src/)"
+          >
+            {isIndexing && isDeepIndexing ? <Loader2 className="h-3 w-3 animate-spin" /> : <DatabaseZap className="h-3 w-3" />}
+            {isIndexing && isDeepIndexing ? "Deep Indexing..." : "Deep Index"}
+          </button>
+        </div>
       </div>
 
       <form onSubmit={handleSearch} className="flex gap-2">
