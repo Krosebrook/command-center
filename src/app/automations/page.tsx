@@ -1,6 +1,7 @@
 import fs from "fs/promises";
 import path from "path";
 import { FOLDERS, AUTOMATION_CATEGORIES } from "@/lib/config";
+import { AutomationRunner } from "@/components/AutomationRunner";
 
 export const dynamic = "force-dynamic";
 
@@ -61,21 +62,21 @@ export default async function AutomationsPage() {
               </span>
             </div>
             {cat.subfolders.length > 0 ? (
-              <div className="space-y-1">
-                {cat.subfolders.slice(0, 5).map((sf) => (
-                  <p
-                    key={sf}
-                    className="text-xs text-muted-foreground truncate"
-                    title={sf}
-                  >
-                    {sf}
-                  </p>
+              <div className="space-y-4">
+                {cat.subfolders.map((sf) => (
+                  <div key={sf} className="flex flex-col gap-1 border-b border-border/50 pb-2 last:border-0">
+                    <p
+                      className="text-xs text-foreground font-medium truncate"
+                      title={sf}
+                    >
+                      {sf}
+                    </p>
+                    <AutomationRunner 
+                      label={sf} 
+                      targetPath={path.join(cat.path, sf)} 
+                    />
+                  </div>
                 ))}
-                {cat.subfolders.length > 5 && (
-                  <p className="text-xs text-primary">
-                    +{cat.subfolders.length - 5} more
-                  </p>
-                )}
               </div>
             ) : (
               <p className="text-xs text-muted-foreground">No templates yet</p>
