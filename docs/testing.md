@@ -344,9 +344,20 @@ Aim for meaningful coverage rather than a specific percentage. Focus on:
 - Component rendering with different prop combinations
 - Edge cases documented in [edge-cases.md](./edge-cases.md)
 
+## Untested Code
+
+The following files have **zero test coverage**. See [Technical Debt](./technical-debt.md) for details:
+
+- `src/lib/db.ts`, `src/lib/embeddings.ts`, `src/lib/vector-store.ts`, `src/lib/chunker.ts`
+- `src/lib/auth.ts`, `src/lib/git-utils.ts`, `src/lib/watcher.ts`, `src/lib/monitor.ts`
+- `src/components/SemanticSearch.tsx`, `src/components/ChatSidebar.tsx`, `src/components/AnalyticsCharts.tsx`, `src/components/AutomationRunner.tsx`
+- `src/app/login/page.tsx`, `src/middleware.ts`
+- All API routes under `/api/auth/`, `/api/analytics`, `/api/chat`, `/api/git`, `/api/search`, `/api/webhooks/`, `/api/automations/execute`, `/api/automations/status/`, `/api/setup/index-vectors`, `/api/setup/watcher-status`
+
 ## Related Documentation
 
 - [Setup Guide](./setup-guide.md) -- Getting started
 - [Architecture](./architecture.md) -- System design and data flow
 - [API Reference](./api-reference.md) -- All API endpoints
 - [Edge Cases](./edge-cases.md) -- Graceful degradation scenarios
+- [Technical Debt](./technical-debt.md) -- Broken/untested features and action plan

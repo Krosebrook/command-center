@@ -276,9 +276,26 @@ Dark HUD / Mission Control aesthetic with the following properties:
 - `prefers-reduced-motion` media query respected
 - Responsive layouts (mobile-first approach)
 
+## Unfinished Feature Layer
+
+See [Technical Debt](./technical-debt.md) for full details. In summary, the following features were added externally and are in various states of broken/untested:
+
+- **Auth system** -- Edge middleware + login page + session tokens. Blocks all routes if active.
+- **SQLite database** -- `better-sqlite3` for scan history, embeddings, job queue.
+- **RAG/Semantic Search** -- Local embedding model (`@xenova/transformers`), vector store, search UI.
+- **AI Chat** -- OpenAI streaming endpoint with function calling (can execute local scripts).
+- **Automation Execution** -- Runs arbitrary `.js/.py/.sh/.ts` scripts via `child_process.exec()`.
+- **Webhooks** -- External trigger endpoint for automation with shared-secret auth.
+- **Analytics** -- SVG sparkline chart of scan history trends.
+- **Git Status** -- Scans configured projects for branch/changes/unpushed status.
+- **File Watcher** -- Chokidar-based watcher that re-indexes changed files.
+
+9 of these files have syntax errors (escaped template literals). None have tests.
+
 ## Related Documentation
 
 - [Setup Guide](./setup-guide.md) -- Getting started
 - [Testing](./testing.md) -- Test strategy and patterns
 - [API Reference](./api-reference.md) -- All API endpoints
 - [Edge Cases](./edge-cases.md) -- Graceful degradation scenarios
+- [Technical Debt](./technical-debt.md) -- Broken/untested features and action plan

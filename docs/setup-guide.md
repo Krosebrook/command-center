@@ -43,10 +43,21 @@
 
 ## Environment Variables
 
+### Core (always used)
+
 | Variable | Default | Description |
 |----------|---------|-------------|
 | `NODE_ENV` | `development` | Environment mode |
 | `LOG_LEVEL` | `info` | Minimum log level: debug, info, warn, error |
+
+### Optional Features (see [Technical Debt](./technical-debt.md))
+
+| Variable | Default | Description |
+|----------|---------|-------------|
+| `ADMIN_PASSWORD` | _(none)_ | If set, enables auth middleware requiring login on all routes |
+| `SESSION_SECRET` | Falls back to `ADMIN_PASSWORD` | HMAC key for signing session tokens |
+| `OPENAI_API_KEY` | _(none)_ | Required for the AI Chat endpoint (`/api/chat`) |
+| `WEBHOOK_SECRET` | _(none)_ | Required for the webhook trigger endpoint (`/api/webhooks/trigger`) |
 
 ## Drive Structure
 

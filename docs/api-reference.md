@@ -517,9 +517,30 @@ All API errors follow this structure:
 - **Rate limiting**: Mutation endpoints use an in-memory rate limiter (30 requests per 60 seconds per key). Exceeding the limit returns HTTP 429.
 - **Input validation**: All POST request bodies are validated against Zod schemas. Invalid JSON is caught by `safeParseBody()`.
 
+---
+
+## Additional Routes (Unfinished -- see [Technical Debt](./technical-debt.md))
+
+The following routes were added externally. Some have syntax errors preventing compilation. None have tests.
+
+| Method | Path | Status | Description |
+|--------|------|--------|-------------|
+| POST | `/api/auth/login` | Functional | Password login, sets HttpOnly cookie |
+| POST | `/api/auth/logout` | Functional | Clears auth cookie |
+| GET | `/api/analytics` | Functional | 30-day scan history from SQLite |
+| GET | `/api/git` | Functional | Git status for all configured projects |
+| POST | `/api/search` | Functional | Semantic search via vector embeddings |
+| POST | `/api/setup/index-vectors` | Functional | Index projects for semantic search |
+| GET | `/api/setup/watcher-status` | Functional | File watcher status |
+| POST | `/api/chat` | **BROKEN** | Streaming AI chat with OpenAI + RAG + tool calling |
+| POST | `/api/automations/execute` | **BROKEN** | Execute scripts via child_process |
+| GET | `/api/automations/status/[jobId]` | Functional | Poll automation job status |
+| POST | `/api/webhooks/trigger` | **BROKEN** | External webhook to trigger automation |
+
 ## Related Documentation
 
 - [Setup Guide](./setup-guide.md) -- Getting started
 - [Architecture](./architecture.md) -- System design and data flow
 - [Testing](./testing.md) -- Test strategy and patterns
 - [Edge Cases](./edge-cases.md) -- Graceful degradation scenarios
+- [Technical Debt](./technical-debt.md) -- Broken/untested features and action plan

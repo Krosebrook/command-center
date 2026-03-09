@@ -76,9 +76,34 @@ npm run dev
 # Open http://localhost:3000
 ```
 
+## Unfinished Features (See docs/technical-debt.md)
+
+A second layer of features was added externally and is in various states of broken/untested.
+**9 files have syntax errors** (escaped template literals) that cause `npx tsc --noEmit` to fail.
+The dev server still works because Next.js compiles on-demand.
+
+### Feature Clusters (all untested, some broken)
+- **Auth system**: `src/lib/auth.ts` (BROKEN), `src/middleware.ts`, `src/app/login/`, `src/app/api/auth/`
+- **SQLite DB**: `src/lib/db.ts` -- scan history, embeddings, job queue via `better-sqlite3`
+- **RAG Search**: `src/lib/embeddings.ts`, `src/lib/vector-store.ts`, `src/lib/chunker.ts` (BROKEN), `src/components/SemanticSearch.tsx`
+- **AI Chat**: `src/app/api/chat/route.ts` (BROKEN), `src/components/ChatSidebar.tsx` (BROKEN) -- OpenAI streaming + tool calling
+- **Automation Exec**: `src/app/api/automations/execute/route.ts` (BROKEN), `src/components/AutomationRunner.tsx` (BROKEN) -- runs arbitrary scripts via exec()
+- **Webhooks**: `src/app/api/webhooks/trigger/route.ts` (BROKEN) -- external trigger for automation
+- **Analytics**: `src/app/api/analytics/route.ts`, `src/components/AnalyticsCharts.tsx` (BROKEN)
+- **Git Status**: `src/lib/git-utils.ts`, `src/app/api/git/route.ts` -- functional, no tests
+- **File Watcher**: `src/lib/watcher.ts` (BROKEN), `src/app/api/setup/watcher-status/route.ts`
+- **Background Monitor**: `src/instrumentation.ts`, `src/lib/monitor.ts` -- 10-min scan interval
+
+### Additional Env Vars (undocumented in setup guide)
+- `ADMIN_PASSWORD` -- auth system master password
+- `SESSION_SECRET` -- HMAC signing key (falls back to ADMIN_PASSWORD)
+- `OPENAI_API_KEY` -- required for chat endpoint
+- `WEBHOOK_SECRET` -- required for webhook trigger endpoint
+
 ## Notes
 - All file system scanning happens server-side only
-- No database -- reads directly from D:\ drive structure
+- SQLite database at `D:\.command-center/metrics.db` used by new features (not core app)
 - Client components must NOT import Node.js `path` module -- use basename() from utils
 - Scanners return safe empty results on drive unavailability (graceful degradation)
 - Setup actions are logged to `.walkthrough-log.json` for undo reference
+- `serverExternalPackages: ["better-sqlite3"]` in next.config.ts prevents webpack bundling issues
