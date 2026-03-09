@@ -7,10 +7,13 @@
     "dev:next": "next dev",
     "dev:electron": "wait-on http://localhost:3000 && electron .",
     "dev": "concurrently -k \"npm run dev:next\" \"npm run dev:electron\"",
-    "build": "next build",
+    "build:next": "next build",
+    "build:prod": "npm run build:next",
+    "build:exe": "npm run build:next && electron-builder --win",
     "start:next": "next start",
     "start:electron": "wait-on http://localhost:3000 && electron .",
-    "start": "concurrently -k \"npm run start:next\" \"npm run start:electron\"",
+    "start:prod": "concurrently -k \"npm run start:next\" \"npm run start:electron\"",
+    "clean": "npx rimraf .next node_modules package-lock.json",
     "lint": "next lint",
     "test": "vitest",
     "test:run": "vitest run",
@@ -51,6 +54,34 @@
     "vitest": "^4.0.18",
     "concurrently": "^8.2.2",
     "wait-on": "^7.2.0",
-    "electron": "^30.0.0"
+    "electron": "^30.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.antigravity.commandcenter",
+    "productName": "Command Center",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "electron-main.js",
+      "public/**/*",
+      ".next/standalone/**/*",
+      ".next/static/**/*"
+    ],
+    "extraResources": [
+      {
+        "from": ".next/static",
+        "to": ".next/static"
+      }
+    ],
+    "win": {
+      "icon": "public/favicon.ico",
+      "target": "nsis"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    }
   }
 }

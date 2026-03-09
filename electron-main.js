@@ -1,8 +1,34 @@
 const { app, BrowserWindow, globalShortcut, Tray, Menu } = require('electron');
 const path = require('path');
+const { fork } = require('child_process');
 
 let mainWindow;
 let tray;
+let nextProcess = null;
+
+function startNextJsServer() {
+  // If the app is compiled and running as an .exe, we must manually boot the standalone Next server
+  if (app.isPackaged) {
+    const nextServerPath = path.join(process.resourcesPath, '.next', 'standalone', 'server.js');
+    console.log('Booting packaged Next.js standalone server at:', nextServerPath);
+    
+    nextProcess = fork(nextServerPath, [], {
+      env: {
+        ...process.env,
+        PORT: 3000,
+        NODE_ENV: 'production',
+      },
+      stdio: ['pipe', 'pipe', 'pipe', 'ipc'] // Keep streams connected for logging
+    });
+
+    if (nextProcess.stdout) {
+      nextProcess.stdout.on('data', (data) => console.log(`[Next.js]: ${data}`));
+    }
+    if (nextProcess.stderr) {
+      nextProcess.stderr.on('data', (data) => console.error(`[Next.js ERROR]: ${data}`));
+    }
+  }
+}
 
 function createWindow() {
   mainWindow = new BrowserWindow({
@@ -72,26 +98,33 @@ function showAndCenterWindow() {
 
 // When Electron has finished initializing
 app.whenReady().then(() => {
-  createWindow();
-  createTray();
+  
+  // Start the background Node.js server
+  startNextJsServer();
 
-  // Register a global shortcut to pop the HUD
-  // Example: CommandOrControl+Shift+Space
-  const ret = globalShortcut.register('CommandOrControl+Shift+Space', () => {
-    showAndCenterWindow();
-  });
+  // Give the server a few seconds to boot and bind to port 3000 before loading the window
+  setTimeout(() => {
+    createWindow();
+    createTray();
 
-  if (!ret) {
-    console.log('Global shortcut registration failed');
-  } else {
-    console.log('Global shortcut [Ctrl+Shift+Space] registered successfully.');
-  }
+    // Register a global shortcut to pop the HUD
+    // Example: CommandOrControl+Shift+Space
+    const ret = globalShortcut.register('CommandOrControl+Shift+Space', () => {
+      showAndCenterWindow();
+    });
 
-  app.on('activate', () => {
-    // On macOS it's common to re-create a window in the app when the
-    // dock icon is clicked and there are no other windows open.
-    if (BrowserWindow.getAllWindows().length === 0) createWindow();
-  });
+    if (!ret) {
+      console.log('Global shortcut registration failed');
+    } else {
+      console.log('Global shortcut [Ctrl+Shift+Space] registered successfully.');
+    }
+
+    app.on('activate', () => {
+      // On macOS it's common to re-create a window in the app when the
+      // dock icon is clicked and there are no other windows open.
+      if (BrowserWindow.getAllWindows().length === 0) createWindow();
+    });
+  }, 2500); // 2.5s boot delay
 });
 
 // Quit when all windows are closed, except on macOS. There, it's common
@@ -103,5 +136,9 @@ app.on('window-all-closed', () => {
 
 // Unregister all shortcuts before quitting
 app.on('will-quit', () => {
+  if (nextProcess) {
+    console.log("Killing standalone Next.js server...");
+    nextProcess.kill();
+  }
   globalShortcut.unregisterAll();
 });
