@@ -4,7 +4,11 @@ import { searchSimilar } from "@/lib/vector-store";
 import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 
-export const POST = withErrorHandling(async (request: Request) => {
+export const POST = async (request: Request): Promise<NextResponse> => {
+  return _POST(request);
+};
+
+const _POST = withErrorHandling(async (request: Request) => {
   const start = Date.now();
   const body = await request.json();
   
@@ -22,5 +26,5 @@ export const POST = withErrorHandling(async (request: Request) => {
   const results = await searchSimilar(queryEmbedding, 5);
   
   logger.info(`Search complete in ${Date.now() - start}ms`, { resultsCount: results.length });
-  return jsonSuccess({ results }, "Search completed successfully", 200, start);
+  return jsonSuccess({ results });
 });
