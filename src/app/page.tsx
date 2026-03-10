@@ -7,7 +7,7 @@ import { SemanticSearch } from "@/components/SemanticSearch";
 import { AnalyticsCharts } from "@/components/AnalyticsCharts";
 import { formatBytes, timeAgo } from "@/lib/utils";
 import { getGitStatus } from "@/lib/git-utils";
-import path from "path";
+import path from "node:path";
 
 export const dynamic = "force-dynamic";
 
@@ -163,12 +163,12 @@ function StatCard({
   value,
   highlight = false,
   mono = false,
-}: {
+}: Readonly<{
   label: string;
   value: string;
   highlight?: boolean;
   mono?: boolean;
-}) {
+}>) {
   return (
     <div
       className={`hud-card p-3 sm:p-4 ${

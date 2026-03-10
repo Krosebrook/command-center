@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useRef, useEffect } from "react";
-import { Send, Bot, User, Terminal, Loader2, Maximize2, Minimize2 } from "lucide-react";
+import { Send, Bot, User, Terminal, Loader2, Minimize2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Message = {
@@ -25,7 +25,7 @@ export function ChatSidebar() {
     }
   }, [messages, isOpen]);
 
-  async function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent<HTMLFormElement>) {
     e.preventDefault();
     if (!input.trim() || isTyping) return;
 
@@ -62,7 +62,7 @@ export function ChatSidebar() {
         
         // Very basic parsing for OpenAI Server Sent Events. 
         // In reality you should use the \`eventsource-parser\` package.
-        const lines = chunk.split('\\n');
+        const lines = chunk.split('\n');
         
         for (const line of lines) {
           if (line.startsWith('data: ') && line !== 'data: [DONE]') {
@@ -76,7 +76,7 @@ export function ChatSidebar() {
                   : msg
               ));
             } catch (e) {
-              // Ignore malformed JSON chunks from split boundaries
+              console.debug("Malformed JSON chunk", e);
             }
           }
         }
@@ -97,6 +97,7 @@ export function ChatSidebar() {
     return (
       <button 
         onClick={() => setIsOpen(true)}
+        title="Open Chat"
         className="fixed bottom-6 right-6 h-12 w-12 rounded-full bg-primary text-primary-foreground shadow-lg flex items-center justify-center hover:scale-105 transition-transform z-50 border border-primary/20 hover:shadow-primary/20 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary focus-visible:ring-offset-2 ring-offset-background"
       >
         <Terminal className="h-5 w-5" />
@@ -116,6 +117,7 @@ export function ChatSidebar() {
         <div className="flex items-center gap-1">
           <button 
             onClick={() => setIsOpen(false)}
+            title="Close Chat"
             className="p-1 hover:bg-accent rounded text-muted-foreground hover:text-foreground transition-colors"
           >
             <Minimize2 className="h-4 w-4" />
@@ -178,6 +180,7 @@ export function ChatSidebar() {
           />
           <button
             type="submit"
+            title="Send Message"
             disabled={isTyping || !input.trim()}
             className="inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50 bg-primary text-primary-foreground hover:bg-primary/90 h-10 w-10 shrink-0"
           >

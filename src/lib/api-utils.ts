@@ -10,8 +10,8 @@ import { logger } from "./logger";
  * Wrap an API route handler with consistent error handling.
  * Catches all errors, logs them, and returns safe JSON responses.
  */
-export function withErrorHandling<T>(
-  handler: (request: Request) => Promise<NextResponse<any>>,
+export function withErrorHandling(
+  handler: (request: Request) => Promise<any>,
 ) {
   return async (request: Request): Promise<NextResponse> => {
     const start = performance.now();

@@ -4,7 +4,7 @@ import path from "path";
 import { PROJECTS, FOLDERS } from "@/lib/config";
 import { generateEmbedding } from "@/lib/embeddings";
 import { saveVectorsToDb, clearProjectVectors, VectorRecord } from "@/lib/vector-store";
-import { chunkCodeFile, SCAN_EXTENSIONS } from "@/lib/chunker";
+import { SCAN_EXTENSIONS, chunkCodeFile } from "@/lib/chunker"; // trigger
 import { withErrorHandling, jsonSuccess } from "@/lib/api-utils";
 import { logger } from "@/lib/logger";
 
