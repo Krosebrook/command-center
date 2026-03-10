@@ -84,7 +84,7 @@ export function ChatSidebar() {
     } catch (err: any) {
       setMessages((prev) => prev.map((msg) => 
         msg.id === assistantMessageId 
-          ? { ...msg, content: \`⚠️ **Error:** \${err.message}\` }
+          ? { ...msg, content: `⚠️ **Error:** ${err.message}` }
           : msg
       ));
     } finally {

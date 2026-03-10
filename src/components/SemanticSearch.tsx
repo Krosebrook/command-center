@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Search, Loader2, DatabaseZap } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 type SearchResult = {
   id: string;
@@ -17,6 +17,7 @@ type SearchResult = {
 
 export function SemanticSearch() {
   const [query, setQuery] = useState("");
+  const { toast } = useToast();
   const [results, setResults] = useState<SearchResult[] | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   const [isIndexing, setIsIndexing] = useState(false);
@@ -42,11 +43,7 @@ export function SemanticSearch() {
       
       setResults(data.data.results);
     } catch (err: any) {
-      toast({
-        title: "Search Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast("error", `Search Error: ${err.message}`);
     } finally {
       setIsSearching(false);
     }
@@ -60,16 +57,9 @@ export function SemanticSearch() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Indexing failed");
       
-      toast({
-        title: "Indexing Complete",
-        description: `Successfully indexed ${data.data.indexedCount} projects.`,
-      });
+      toast("success", `Indexing Complete: Successfully indexed ${data.data.indexedCount} projects.`);
     } catch (err: any) {
-      toast({
-        title: "Indexing Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast("error", `Indexing Error: ${err.message}`);
     } finally {
       setIsIndexing(false);
       setIsDeepIndexing(false);

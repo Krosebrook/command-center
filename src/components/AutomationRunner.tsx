@@ -1,10 +1,11 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Play, Loader2, FileTerminal } from "lucide-react";
-import { toast } from "@/components/ui/use-toast";
+import { useToast } from "@/components/ui/use-toast";
 
 export function AutomationRunner({ targetPath, label }: { targetPath: string, label: string }) {
+  const { toast } = useToast();
   const [isRunning, setIsRunning] = useState(false);
   const [jobId, setJobId] = useState<string | null>(null);
   const [logs, setLogs] = useState<{ output: string; status: string; command: string; failed?: boolean } | null>(null);
@@ -16,7 +17,7 @@ export function AutomationRunner({ targetPath, label }: { targetPath: string, la
     if (isRunning && jobId) {
       interval = setInterval(async () => {
         try {
-          const res = await fetch(\`/api/automations/status/\${jobId}\`);
+          const res = await fetch(`/api/automations/status/${jobId}`);
           if (!res.ok) return;
           const data = await res.json();
           const job = data.data.job;
@@ -31,9 +32,9 @@ export function AutomationRunner({ targetPath, label }: { targetPath: string, la
           if (job.status === "completed" || job.status === "failed") {
             setIsRunning(false);
             if (job.status === "failed") {
-              toast({ title: "Workflow Failed", variant: "destructive" });
+              toast("error", "Workflow Failed");
             } else {
-              toast({ title: "Workflow Completed Successfully" });
+              toast("success", "Workflow Completed Successfully");
             }
           }
         } catch (err) {
@@ -66,11 +67,7 @@ export function AutomationRunner({ targetPath, label }: { targetPath: string, la
       setLogs({ output: "Job queued...", status: "pending", command: targetPath });
       
     } catch (err: any) {
-      toast({
-        title: "Workflow Error",
-        description: err.message,
-        variant: "destructive",
-      });
+      toast("error", `Workflow Error: ${err.message}`);
       setLogs({ output: err.message, status: "failed", command: "Unknown", failed: true });
       setIsRunning(false);
     }

@@ -49,7 +49,7 @@ export const POST = withErrorHandling(async (request: Request) => {
     else throw new Error(`Unsupported script type: ${ext}`);
   }
 
-  logger.info(\`Queuing workflow: \${command} in \${cwd}\`);
+  logger.info(`Queuing workflow: ${command} in ${cwd}`);
 
   // Generate a unique Job ID
   const jobId = crypto.randomUUID();
@@ -69,13 +69,13 @@ export const POST = withErrorHandling(async (request: Request) => {
 
   child.on('close', (code) => {
     const finalStatus = code === 0 ? 'completed' : 'failed';
-    updateJobStatus(jobId, finalStatus, \`\n[Process exited with code \${code}]\`);
-    logger.info(\`Job \${jobId} finished with code \${code}\`);
+    updateJobStatus(jobId, finalStatus, `\n[Process exited with code ${code}]`);
+    logger.info(`Job ${jobId} finished with code ${code}`);
   });
 
   child.on('error', (err) => {
-    updateJobStatus(jobId, 'failed', \`\n[Execution Error: \${err.message}]\`);
-    logger.error(\`Job \${jobId} failed to start\`, { error: err.message });
+    updateJobStatus(jobId, 'failed', `\n[Execution Error: ${err.message}]`);
+    logger.error(`Job ${jobId} failed to start`, { error: err.message });
   });
 
   // Return immediately to the client with the tracking ID

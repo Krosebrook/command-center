@@ -11,7 +11,7 @@ import { logger } from "./logger";
  * Catches all errors, logs them, and returns safe JSON responses.
  */
 export function withErrorHandling<T>(
-  handler: (request: Request) => Promise<NextResponse<T>>,
+  handler: (request: Request) => Promise<NextResponse<any>>,
 ) {
   return async (request: Request): Promise<NextResponse> => {
     const start = performance.now();
@@ -46,8 +46,11 @@ export function withErrorHandling<T>(
 /**
  * Success JSON response helper.
  */
-export function jsonSuccess<T>(data: T, status = 200): NextResponse<T> {
-  return NextResponse.json(data, { status });
+export function jsonSuccess<T>(data: T, message?: string, status = 200, start?: number): NextResponse {
+  const payload: any = { data };
+  if (message) payload.message = message;
+  if (start) payload.duration = `${Date.now() - start}ms`;
+  return NextResponse.json(payload, { status });
 }
 
 // ---------------------------------------------------------------------------

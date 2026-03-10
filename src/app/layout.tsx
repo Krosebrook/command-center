@@ -1,9 +1,7 @@
 import type { Metadata } from "next";
 import { NavSidebar } from "@/components/NavSidebar";
 import "./globals.css";
-import { ThemeProvider } from "@/components/ThemeProvider";
-import { ChatSidebar } from "@/components/ChatSidebar";
-import { Toaster } from "@/components/ui/toaster";
+import { ToastProvider } from "@/components/ui/Toast";
 
 export const metadata: Metadata = {
   title: "Command Center | D:\\ Drive",
@@ -21,7 +19,7 @@ export default function RootLayout({
   return (
     <html lang="en" className="dark" data-scroll-behavior="smooth">
       <body className="min-h-screen flex bg-background text-foreground antialiased">
-        <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <ToastProvider>
           {/* Skip to content link for keyboard/screen reader users */}
           <a
             href="#main-content"
@@ -40,8 +38,7 @@ export default function RootLayout({
             </main>
           </div>
           <ChatSidebar />
-          <Toaster />
-        </ThemeProvider>
+        </ToastProvider>
       </body>
     </html>
   );

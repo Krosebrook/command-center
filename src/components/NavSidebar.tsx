@@ -141,7 +141,7 @@ export function NavSidebar() {
         <button 
           onClick={async () => {
             await fetch('/api/auth/logout', { method: 'POST' });
-            window.location.href = '/login';
+            globalThis.location.href = '/login';
           }}
           className="text-[10px] font-mono uppercase text-muted-foreground hover:text-destructive flex items-center gap-2 transition-colors w-fit"
         >
@@ -163,7 +163,7 @@ export function NavSidebar() {
         )}
         onClick={() => setMobileOpen(true)}
         aria-label="Open navigation menu"
-        aria-expanded={mobileOpen}
+        aria-expanded={mobileOpen ? "true" : "false"}
         aria-controls="nav-sidebar"
       >
         <svg className="w-4 h-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden="true">
@@ -190,7 +190,6 @@ export function NavSidebar() {
           "lg:translate-x-0",
           mobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0",
         )}
-        role="navigation"
         aria-label="Main"
       >
         {sidebarContent}
